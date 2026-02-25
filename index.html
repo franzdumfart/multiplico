@@ -74,20 +74,17 @@
             <div id="feedback" class="feedback"></div>
         </div>
 
-        <div id="score-board" class="score-board hidden">
-            <div class="section-title">Deine Bestleistungen</div>
+        <div id="score-board" class="score-board">
+            <div class="ranking-tabs">
+                <button class="tab-btn active" data-tab="timed">5 Minuten Ranking</button>
+                <button class="tab-btn" data-tab="count">10 Fragen Ranking</button>
+            </div>
             
-            <div class="ranking-container">
-                <div class="ranking-column">
-                    <h4>Endlos</h4>
-                    <ul id="score-list-endless" class="score-list"></ul>
-                </div>
-                <div class="ranking-column">
-                    <h4>5 Minuten</h4>
+            <div class="ranking-content">
+                <div id="ranking-timed" class="ranking-pane active">
                     <ul id="score-list-timed" class="score-list"></ul>
                 </div>
-                <div class="ranking-column">
-                    <h4>10 Fragen</h4>
+                <div id="ranking-count" class="ranking-pane">
                     <ul id="score-list-count" class="score-list"></ul>
                 </div>
             </div>
@@ -110,9 +107,10 @@
         const btnStart = document.getElementById('btn-start');
         const btnAbort = document.getElementById('btn-abort');
         const scoreBoard = document.getElementById('score-board');
-        const scoreListEndless = document.getElementById('score-list-endless');
         const scoreListTimed = document.getElementById('score-list-timed');
         const scoreListCount = document.getElementById('score-list-count');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const rankingPanes = document.querySelectorAll('.ranking-pane');
         
         const questionText = document.getElementById('question-text');
         const answerInput = document.getElementById('answer-input');
@@ -135,6 +133,19 @@
         let startTime = 0;
         let timerInterval = null;
         let isActive = false;
+
+        // Tab switching logic
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                rankingPanes.forEach(p => p.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(`ranking-${tabId}`).classList.add('active');
+            });
+        });
 
         // Initialize multiplication series 0 to 10
         for (let i = 0; i <= 10; i++) {
@@ -195,7 +206,6 @@
             setupScreen.classList.remove('hidden');
             practiceScreen.classList.add('hidden');
             scoreBoard.classList.remove('hidden');
-            if (sessionScores.length === 0) scoreBoard.classList.add('hidden');
         }
 
         function startPractice() {
@@ -359,21 +369,38 @@
         }
 
         function updateScoreBoard() {
-            scoreBoard.classList.remove('hidden');
-            
-            scoreListEndless.innerHTML = '';
             scoreListTimed.innerHTML = '';
             scoreListCount.innerHTML = '';
             
-            [...sessionScores].reverse().forEach(s => {
+            // Filter scores: only show top 5 for each mode
+            const timedScores = sessionScores.filter(s => s.mode === 'timed')
+                .sort((a, b) => b.points - a.points)
+                .slice(0, 5);
+            
+            const countScores = sessionScores.filter(s => s.mode === 'count')
+                .sort((a, b) => b.points - a.points)
+                .slice(0, 5);
+
+            timedScores.forEach(s => {
                 const li = document.createElement('li');
                 li.className = 'score-item';
                 li.innerHTML = `<span>${s.date} (${s.time})</span> <strong>${s.points} Pkt</strong>`;
-                
-                if (s.mode === 'endless') scoreListEndless.appendChild(li);
-                if (s.mode === 'timed') scoreListTimed.appendChild(li);
-                if (s.mode === 'count') scoreListCount.appendChild(li);
+                scoreListTimed.appendChild(li);
             });
+
+            countScores.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'score-item';
+                li.innerHTML = `<span>${s.date} (${s.time})</span> <strong>${s.points} Pkt</strong>`;
+                scoreListCount.appendChild(li);
+            });
+
+            if (timedScores.length === 0) {
+                scoreListTimed.innerHTML = '<li class="score-empty">Noch keine Ergebnisse</li>';
+            }
+            if (countScores.length === 0) {
+                scoreListCount.innerHTML = '<li class="score-empty">Noch keine Ergebnisse</li>';
+            }
         }
     </script>
 </body>
