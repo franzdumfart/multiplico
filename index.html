@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>multiplico - 1x1 üben</title>
+    <title>multiplico - 1x1 gratis online üeben</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -470,7 +470,7 @@
                 currentPoints += 10;
                 showFeedback('Richtig! +10', 'correct');
                 
-                markAsSolved(currentQuestion.a, currentQuestion.b);
+                trackAttempt(currentQuestion.a, currentQuestion.b, true);
 
                 if (currentGameMode === 'mistakes') {
                     removeMistake(currentQuestion.a, currentQuestion.b);
@@ -481,6 +481,8 @@
                 currentPoints = Math.max(-500, currentPoints - 10);
                 showFeedback(`Falsch! ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
                 
+                trackAttempt(currentQuestion.a, currentQuestion.b, false);
+
                 if (currentGameMode !== 'mistakes') {
                     addMistake(currentQuestion.a, currentQuestion.b);
                 }
@@ -528,12 +530,25 @@
             updateScoreBoard();
         }
 
-        function markAsSolved(a, b) {
+        function trackAttempt(a, b, isCorrect) {
             // Store both directions (a*b and b*a) as they are the same calculation
             const key1 = `${a}x${b}`;
             const key2 = `${b}x${a}`;
-            solvedProblems[key1] = true;
-            solvedProblems[key2] = true;
+            const attemptData = {
+                status: isCorrect ? 'correct' : 'wrong',
+                date: new Date().toLocaleDateString('de-DE', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }),
+                a: a,
+                b: b,
+                answer: a * b
+            };
+            solvedProblems[key1] = attemptData;
+            solvedProblems[key2] = attemptData;
             localStorage.setItem('multiplico_solved', JSON.stringify(solvedProblems));
         }
 
@@ -561,15 +576,29 @@
                 
                 for (let j = 0; j <= 10; j++) {
                     const td = document.createElement('td');
-                    const isSolved = solvedProblems[`${i}x${j}`];
+                    const attempt = solvedProblems[`${i}x${j}`];
+                    
+                    // Support both old (boolean) and new (object) data format
+                    const isSolved = attempt === true || (attempt && attempt.status === 'correct');
+                    const isWrong = attempt && attempt.status === 'wrong';
                     
                     if (isSolved) {
                         td.className = 'solved';
                         td.textContent = '✓';
-                        td.title = `${i} × ${j} = ${i*j}`;
+                    } else if (isWrong) {
+                        td.className = 'wrong-cell';
+                        td.textContent = '✗';
                     } else {
                         td.className = 'unsolved';
                         td.textContent = '';
+                    }
+
+                    // Tooltip
+                    if (attempt && typeof attempt === 'object') {
+                        td.title = `${i} × ${j} = ${i*j}\nGeübt am: ${attempt.date}\nStatus: ${attempt.status === 'correct' ? 'Richtig' : 'Falsch'}`;
+                    } else if (attempt === true) {
+                        td.title = `${i} × ${j} = ${i*j}\nStatus: Richtig`;
+                    } else {
                         td.title = `${i} × ${j} = ?`;
                     }
                     

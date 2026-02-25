@@ -389,6 +389,12 @@ h1 {
     font-weight: bold;
 }
 
+.progress-matrix td.wrong-cell {
+    background-color: #ffebee;
+    color: #f44336;
+    font-weight: bold;
+}
+
 .progress-matrix td.unsolved {
     background-color: #fff;
     color: #ddd;
