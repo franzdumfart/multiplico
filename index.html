@@ -39,6 +39,13 @@
                         <span>Schnelligkeit zählt</span>
                     </label>
                 </div>
+                <div class="mode-item">
+                    <input type="radio" name="game-mode" id="mode-mistakes" value="mistakes">
+                    <label for="mode-mistakes" class="mode-label">
+                        <strong>Fehler üben</strong>
+                        <span id="mistakes-count-label">Bisher keine Fehler</span>
+                    </label>
+                </div>
             </div>
             
             <button class="btn-start" id="btn-start">Jetzt üben</button>
@@ -125,6 +132,7 @@
         const btnModalClose = document.getElementById('btn-modal-close');
         
         let sessionScores = JSON.parse(localStorage.getItem('multiplico_scores')) || [];
+        let mistakes = JSON.parse(localStorage.getItem('multiplico_mistakes')) || [];
         let currentPoints = 0;
         let selectedSeries = [];
         let currentQuestion = { a: 0, b: 0, answer: 0 };
@@ -172,17 +180,24 @@
         if (sessionScores.length > 0) {
             updateScoreBoard();
         }
+        updateMistakesCount();
 
         btnStart.addEventListener('click', () => {
             selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
                 .map(cb => parseInt(cb.value));
             
-            if (selectedSeries.length === 0) {
+            currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
+
+            if (currentGameMode !== 'mistakes' && selectedSeries.length === 0) {
                 alert('Bitte wähle mindestens eine Reihe aus!');
                 return;
             }
 
-            currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
+            if (currentGameMode === 'mistakes' && mistakes.length === 0) {
+                alert('Du hast noch keine Fehler zum Üben!');
+                return;
+            }
+
             startPractice();
         });
 
@@ -269,8 +284,22 @@
                 return;
             }
 
-            const a = selectedSeries[Math.floor(Math.random() * selectedSeries.length)];
-            const b = Math.floor(Math.random() * 11); // 0 to 10
+            // Check if mistakes mode is finished
+            if (currentGameMode === 'mistakes' && mistakes.length === 0) {
+                endSession();
+                return;
+            }
+
+            let a, b;
+            if (currentGameMode === 'mistakes') {
+                const mistake = mistakes[Math.floor(Math.random() * mistakes.length)];
+                a = mistake.a;
+                b = mistake.b;
+            } else {
+                a = selectedSeries[Math.floor(Math.random() * selectedSeries.length)];
+                b = Math.floor(Math.random() * 11); // 0 to 10
+            }
+
             currentQuestion = { a, b, answer: a * b };
             questionText.textContent = `${a} × ${b} =`;
             answerInput.value = '';
@@ -279,6 +308,8 @@
             
             if (currentGameMode === 'count') {
                 questionCounter.textContent = `Frage ${questionsAnswered + 1} von 10`;
+            } else if (currentGameMode === 'mistakes') {
+                questionCounter.textContent = `Fehler zum Üben: ${mistakes.length}`;
             } else {
                 questionCounter.textContent = `Frage ${questionsAnswered + 1}`;
             }
@@ -309,10 +340,15 @@
         }
 
         function showResults(points, count, time) {
+            let modeName = 'Endlos';
+            if (currentGameMode === 'timed') modeName = '5 Minuten';
+            if (currentGameMode === 'count') modeName = '10 Fragen';
+            if (currentGameMode === 'mistakes') modeName = 'Fehler üben';
+
             let summary = `Du hast <strong>${points} Punkte</strong> erreicht!<br><br>`;
             summary += `Beantwortete Fragen: ${count}<br>`;
             summary += `Zeit: ${time}<br>`;
-            summary += `Modus: ${currentGameMode === 'timed' ? '5 Minuten' : (currentGameMode === 'count' ? '10 Fragen' : 'Endlos')}`;
+            summary += `Modus: ${modeName}`;
             
             resultSummary.innerHTML = summary;
             resultModal.classList.remove('hidden');
@@ -348,13 +384,50 @@
             if (userAnswer === currentQuestion.answer) {
                 currentPoints += 10;
                 showFeedback('Richtig! +10', 'correct');
+                
+                if (currentGameMode === 'mistakes') {
+                    removeMistake(currentQuestion.a, currentQuestion.b);
+                }
+                
                 setTimeout(nextQuestion, 600);
             } else {
                 currentPoints = Math.max(-500, currentPoints - 10);
                 showFeedback(`Falsch! Es wäre ${currentQuestion.answer} gewesen.`, 'wrong');
+                
+                if (currentGameMode !== 'mistakes') {
+                    addMistake(currentQuestion.a, currentQuestion.b);
+                }
+                
                 setTimeout(nextQuestion, 1500);
             }
             updateScoreDisplay();
+        }
+
+        function addMistake(a, b) {
+            const exists = mistakes.some(m => m.a === a && m.b === b);
+            if (!exists) {
+                mistakes.push({ a, b });
+                saveMistakes();
+            }
+        }
+
+        function removeMistake(a, b) {
+            mistakes = mistakes.filter(m => !(m.a === a && m.b === b));
+            saveMistakes();
+        }
+
+        function saveMistakes() {
+            localStorage.setItem('multiplico_mistakes', JSON.stringify(mistakes));
+            updateMistakesCount();
+        }
+
+        function updateMistakesCount() {
+            const countLabel = document.getElementById('mistakes-count-label');
+            if (mistakes.length === 0) {
+                countLabel.textContent = 'Bisher keine Fehler';
+            } else {
+                countLabel.textContent = `${mistakes.length} Fehler zu üben`;
+            }
         }
 
         function showFeedback(text, type) {
