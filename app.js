@@ -12,6 +12,7 @@ const seriesContainer = document.getElementById('series-selection');
 const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
 const btnShowMatrix = document.getElementById('btn-show-matrix');
+const btnShowHistory = document.getElementById('btn-show-history');
 const btnExportCSV = document.getElementById('btn-export-csv');
 const btnAbort = document.getElementById('btn-abort');
 const scoreBoard = document.getElementById('score-board');
@@ -37,6 +38,13 @@ const btnModalClose = document.getElementById('btn-modal-close');
 const matrixModal = document.getElementById('matrix-modal');
 const btnMatrixClose = document.getElementById('btn-matrix-close');
 const progressMatrixTable = document.getElementById('progress-matrix');
+
+const historyModal = document.getElementById('history-modal');
+const btnHistoryClose = document.getElementById('btn-history-close');
+const historyList = document.getElementById('history-list');
+const statTotalPlayed = document.getElementById('stat-total-played');
+const statTotalCorrect = document.getElementById('stat-total-correct');
+const statTotalWrong = document.getElementById('stat-total-wrong');
 
 const totalPointsDisplay = document.getElementById('total-points-display');
 const totalPointsValue = document.getElementById('total-points-value');
@@ -135,6 +143,8 @@ let solvedProblems = {};
 let savedSeries = null;
 
 let currentPoints = 0;
+let correctCount = 0;
+let wrongCount = 0;
 let selectedSeries = [];
 let currentQuestion = { a: 0, b: 0, answer: 0 };
 let currentGameMode = 'endless';
@@ -373,8 +383,17 @@ btnShowMatrix.addEventListener('click', () => {
     matrixModal.classList.remove('hidden');
 });
 
+btnShowHistory.addEventListener('click', () => {
+    renderHistory();
+    historyModal.classList.remove('hidden');
+});
+
 btnMatrixClose.addEventListener('click', () => {
     matrixModal.classList.add('hidden');
+});
+
+btnHistoryClose.addEventListener('click', () => {
+    historyModal.classList.add('hidden');
 });
 
 btnExportCSV.addEventListener('click', () => {
@@ -428,6 +447,8 @@ function showSetup() {
 function startPractice() {
     currentPoints = 0;
     questionsAnswered = 0;
+    correctCount = 0;
+    wrongCount = 0;
     isActive = true;
     updateScoreDisplay();
     
@@ -560,7 +581,9 @@ function endSession(aborted = false) {
             points: currentPoints,
             series: selectedSeries.join(', '),
             mode: currentGameMode,
-            time: timeStr
+            time: timeStr,
+            correct: correctCount,
+            wrong: wrongCount
         });
 
         showResults(currentPoints, questionsAnswered, timeStr);
@@ -614,6 +637,7 @@ async function checkAnswer() {
 
     if (userAnswer === currentQuestion.answer) {
         currentPoints += 10;
+        correctCount++;
         showFeedback('Richtig! +10', 'correct');
         
         await trackAttempt(currentQuestion.a, currentQuestion.b, true);
@@ -625,6 +649,7 @@ async function checkAnswer() {
         nextQuestion();
     } else {
         currentPoints = Math.max(-500, currentPoints - 10);
+        wrongCount++;
         showFeedback(`Falsch! ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
         
         await trackAttempt(currentQuestion.a, currentQuestion.b, false);
@@ -762,6 +787,49 @@ function renderMatrix() {
         theme: 'light-border',
         touch: ['hold', 100], // Optimized for mobile
     });
+}
+
+function renderHistory() {
+    historyList.innerHTML = '';
+    
+    let totalPlayed = 0;
+    let totalCorrect = 0;
+    let totalWrong = 0;
+
+    // We use all recorded scores for stats
+    sessionScores.forEach(s => {
+        totalCorrect += (s.correct || 0);
+        totalWrong += (s.wrong || 0);
+        totalPlayed += ((s.correct || 0) + (s.wrong || 0));
+        
+        const li = document.createElement('li');
+        li.className = 'score-item';
+        
+        let modeName = 'Endlos';
+        if (s.mode === 'timed') modeName = '5 Min';
+        if (s.mode === 'count') modeName = '10 Frag';
+        if (s.mode === 'mistakes') modeName = 'Fehler';
+
+        li.innerHTML = `
+            <div style="flex: 1;">
+                <strong>${s.date}</strong> (${modeName})<br>
+                <small>${s.series}</small>
+            </div>
+            <div style="text-align: right;">
+                <strong>${s.points} Pkt</strong><br>
+                <small>${s.correct || 0} ✓ / ${s.wrong || 0} ✗</small>
+            </div>
+        `;
+        historyList.appendChild(li);
+    });
+
+    statTotalPlayed.textContent = totalPlayed;
+    statTotalCorrect.textContent = totalCorrect;
+    statTotalWrong.textContent = totalWrong;
+
+    if (sessionScores.length === 0) {
+        historyList.innerHTML = '<li class="score-empty">Noch kein Quiz-Verlauf vorhanden. Spiel eine Runde!</li>';
+    }
 }
 
 async function updateScoreBoard() {

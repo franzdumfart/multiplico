@@ -70,6 +70,7 @@
             
             <button class="btn-start" id="btn-start">Jetzt üben</button>
             <button class="btn-secondary" id="btn-show-matrix">Meine Erfolgs-Matrix 📊</button>
+            <button class="btn-secondary" id="btn-show-history" style="background-color: #607d8b;">Mein Quiz-Verlauf 📜</button>
             <div class="setup-footer">
                 <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
                 <button class="btn-text-small" id="btn-export-csv">Daten exportieren</button>
@@ -151,6 +152,35 @@
                     </table>
                 </div>
                 <button id="btn-matrix-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
+            </div>
+        </div>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <h2>Mein Quiz-Verlauf 📜</h2>
+                
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-total-played">0</div>
+                        <div class="stat-label">Gesamt</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-total-correct" style="color: var(--primary-color);">0</div>
+                        <div class="stat-label">Richtig</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="stat-total-wrong" style="color: #ff5252;">0</div>
+                        <div class="stat-label">Falsch</div>
+                    </div>
+                </div>
+
+                <div class="history-list-container">
+                    <ul id="history-list" class="score-list">
+                        <!-- Filled via JS -->
+                    </ul>
+                </div>
+                <button id="btn-history-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
             </div>
         </div>
     </div>
