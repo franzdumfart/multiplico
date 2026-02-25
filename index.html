@@ -49,6 +49,7 @@
             </div>
             
             <button class="btn-start" id="btn-start">Jetzt üben</button>
+            <button class="btn-secondary" id="btn-show-matrix">Meine Erfolgs-Matrix 📊</button>
             <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
         </div>
 
@@ -106,6 +107,20 @@
                 <button id="btn-modal-close" class="btn-start">Nochmal spielen</button>
             </div>
         </div>
+
+        <!-- Matrix Modal -->
+        <div id="matrix-modal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <h2>Deine Erfolgs-Matrix</h2>
+                <p class="matrix-info">Hier siehst du, welche Rechnungen du schon richtig gelöst hast! ✨</p>
+                <div class="matrix-scroll-container">
+                    <table class="progress-matrix" id="progress-matrix">
+                        <!-- Filled via JS -->
+                    </table>
+                </div>
+                <button id="btn-matrix-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -114,6 +129,7 @@
         const seriesContainer = document.getElementById('series-selection');
         const btnStart = document.getElementById('btn-start');
         const btnReset = document.getElementById('btn-reset');
+        const btnShowMatrix = document.getElementById('btn-show-matrix');
         const btnAbort = document.getElementById('btn-abort');
         const scoreBoard = document.getElementById('score-board');
         const scoreListTimed = document.getElementById('score-list-timed');
@@ -133,8 +149,13 @@
         const resultSummary = document.getElementById('result-summary');
         const btnModalClose = document.getElementById('btn-modal-close');
         
+        const matrixModal = document.getElementById('matrix-modal');
+        const btnMatrixClose = document.getElementById('btn-matrix-close');
+        const progressMatrixTable = document.getElementById('progress-matrix');
+        
         let sessionScores = JSON.parse(localStorage.getItem('multiplico_scores')) || [];
         let mistakes = JSON.parse(localStorage.getItem('multiplico_mistakes')) || [];
+        let solvedProblems = JSON.parse(localStorage.getItem('multiplico_solved')) || {};
         let currentPoints = 0;
         let selectedSeries = [];
         let currentQuestion = { a: 0, b: 0, answer: 0 };
@@ -183,11 +204,13 @@
         updateMistakesCount();
 
         btnReset.addEventListener('click', () => {
-            if (confirm('Möchtest du wirklich alle deine Punkte und Fehler löschen? Dies kann nicht rückgängig gemacht werden.')) {
+            if (confirm('Möchtest du wirklich alle deine Punkte, Fehler und deinen Fortschritt löschen? Dies kann nicht rückgängig gemacht werden.')) {
                 localStorage.removeItem('multiplico_scores');
                 localStorage.removeItem('multiplico_mistakes');
+                localStorage.removeItem('multiplico_solved');
                 sessionScores = [];
                 mistakes = [];
+                solvedProblems = {};
                 updateScoreBoard();
                 updateMistakesCount();
             }
@@ -219,6 +242,15 @@
         btnModalClose.addEventListener('click', () => {
             resultModal.classList.add('hidden');
             showSetup();
+        });
+
+        btnShowMatrix.addEventListener('click', () => {
+            renderMatrix();
+            matrixModal.classList.remove('hidden');
+        });
+
+        btnMatrixClose.addEventListener('click', () => {
+            matrixModal.classList.add('hidden');
         });
 
         // Allow keyboard input and Enter key
@@ -394,6 +426,8 @@
                 currentPoints += 10;
                 showFeedback('Richtig! +10', 'correct');
                 
+                markAsSolved(currentQuestion.a, currentQuestion.b);
+
                 if (currentGameMode === 'mistakes') {
                     removeMistake(currentQuestion.a, currentQuestion.b);
                 }
@@ -448,6 +482,57 @@
             sessionScores.push(score);
             localStorage.setItem('multiplico_scores', JSON.stringify(sessionScores));
             updateScoreBoard();
+        }
+
+        function markAsSolved(a, b) {
+            // Store both directions (a*b and b*a) as they are the same calculation
+            const key1 = `${a}x${b}`;
+            const key2 = `${b}x${a}`;
+            solvedProblems[key1] = true;
+            solvedProblems[key2] = true;
+            localStorage.setItem('multiplico_solved', JSON.stringify(solvedProblems));
+        }
+
+        function renderMatrix() {
+            progressMatrixTable.innerHTML = '';
+            
+            // Header row
+            const headerRow = document.createElement('tr');
+            headerRow.appendChild(document.createElement('th')); // Empty corner
+            for (let i = 0; i <= 10; i++) {
+                const th = document.createElement('th');
+                th.textContent = i;
+                headerRow.appendChild(th);
+            }
+            progressMatrixTable.appendChild(headerRow);
+            
+            // Data rows
+            for (let i = 0; i <= 10; i++) {
+                const row = document.createElement('tr');
+                
+                // Row header
+                const rowHeader = document.createElement('th');
+                rowHeader.textContent = i;
+                row.appendChild(rowHeader);
+                
+                for (let j = 0; j <= 10; j++) {
+                    const td = document.createElement('td');
+                    const isSolved = solvedProblems[`${i}x${j}`];
+                    
+                    if (isSolved) {
+                        td.className = 'solved';
+                        td.textContent = '✓';
+                        td.title = `${i} × ${j} = ${i*j}`;
+                    } else {
+                        td.className = 'unsolved';
+                        td.textContent = '';
+                        td.title = `${i} × ${j} = ?`;
+                    }
+                    
+                    row.appendChild(td);
+                }
+                progressMatrixTable.appendChild(row);
+            }
         }
 
         function updateScoreBoard() {
