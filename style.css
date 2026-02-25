@@ -37,7 +37,7 @@ h1 {
 }
 
 .logo {
-    max-width: 150px;
+    max-width: 250px;
     height: auto;
     margin-bottom: 10px;
 }
@@ -130,4 +130,106 @@ h1 {
 
 .hidden {
     display: none;
+}
+
+/* Practice Screen Styles */
+.session-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-small {
+    background: #eee;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#current-score-display {
+    font-weight: 800;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.question-container {
+    margin: 30px 0;
+}
+
+#question-text {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+#answer-input {
+    width: 120px;
+    height: 70px;
+    font-size: 2.5rem;
+    text-align: center;
+    border: 3px solid #eee;
+    border-radius: 15px;
+    background: #f9f9f9;
+    color: var(--text-color);
+    font-weight: 800;
+}
+
+/* Hide spin buttons for number input */
+#answer-input::-webkit-outer-spin-button,
+#answer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.num-btn {
+    height: 65px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: #fff;
+    border: 2px solid #eee;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.1s;
+    box-shadow: 0 4px 0 #eee;
+}
+
+.num-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+.num-btn[data-val="clear"] {
+    color: #f44336;
+}
+
+.num-btn[data-val="enter"] {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 0 #388E3C;
+}
+
+.feedback {
+    height: 30px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.feedback.correct {
+    color: var(--primary-color);
+}
+
+.feedback.wrong {
+    color: #f44336;
 }

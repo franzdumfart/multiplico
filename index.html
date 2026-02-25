@@ -9,7 +9,6 @@
 <body>
     <div class="container">
         <img src="Images/logo.png" alt="multiplico Logo" class="logo">
-        <h1>multiplico</h1>
         
         <div id="setup-screen">
             <div class="section-title">Welche Reihen möchtest du üben?</div>
@@ -20,6 +19,34 @@
             <button class="btn-start" id="btn-start">Jetzt üben</button>
         </div>
 
+        <div id="practice-screen" class="hidden">
+            <div class="session-info">
+                <button id="btn-back" class="btn-small">⬅ Zurück</button>
+                <div id="current-score-display">Punkte: 0</div>
+            </div>
+            
+            <div class="question-container">
+                <div id="question-text">5 × 3 =</div>
+                <input type="number" id="answer-input" readonly placeholder="?">
+            </div>
+
+            <div class="numpad">
+                <button class="num-btn" data-val="1">1</button>
+                <button class="num-btn" data-val="2">2</button>
+                <button class="num-btn" data-val="3">3</button>
+                <button class="num-btn" data-val="4">4</button>
+                <button class="num-btn" data-val="5">5</button>
+                <button class="num-btn" data-val="6">6</button>
+                <button class="num-btn" data-val="7">7</button>
+                <button class="num-btn" data-val="8">8</button>
+                <button class="num-btn" data-val="9">9</button>
+                <button class="num-btn" data-val="clear">C</button>
+                <button class="num-btn" data-val="0">0</button>
+                <button class="num-btn" data-val="enter">OK</button>
+            </div>
+            <div id="feedback" class="feedback"></div>
+        </div>
+
         <div id="score-board" class="score-board hidden">
             <div class="section-title">Deine Punkte</div>
             <ul id="score-list" class="score-list"></ul>
@@ -27,12 +54,24 @@
     </div>
 
     <script>
+        const setupScreen = document.getElementById('setup-screen');
+        const practiceScreen = document.getElementById('practice-screen');
         const seriesContainer = document.getElementById('series-selection');
         const btnStart = document.getElementById('btn-start');
+        const btnBack = document.getElementById('btn-back');
         const scoreBoard = document.getElementById('score-board');
         const scoreList = document.getElementById('score-list');
         
+        const questionText = document.getElementById('question-text');
+        const answerInput = document.getElementById('answer-input');
+        const currentScoreDisplay = document.getElementById('current-score-display');
+        const feedback = document.getElementById('feedback');
+        const numBtns = document.querySelectorAll('.num-btn');
+        
         let sessionScores = [];
+        let currentPoints = 0;
+        let selectedSeries = [];
+        let currentQuestion = { a: 0, b: 0, answer: 0 };
 
         // Initialize multiplication series 0 to 10
         for (let i = 0; i <= 10; i++) {
@@ -56,7 +95,7 @@
         }
 
         btnStart.addEventListener('click', () => {
-            const selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
+            selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
                 .map(cb => parseInt(cb.value));
             
             if (selectedSeries.length === 0) {
@@ -64,19 +103,94 @@
                 return;
             }
 
-            // The practice session would start here.
-            // For now, we simulate a result and save it,
-            // as the actual practice UI hasn't been specified yet.
-            
-            // Mock result for this run
-            const mockScore = {
-                date: new Date().toLocaleTimeString(),
-                points: Math.floor(Math.random() * 10) + 1,
-                total: 10
-            };
-            
-            saveScore(mockScore);
+            startPractice();
         });
+
+        btnBack.addEventListener('click', () => {
+            if (currentPoints !== 0) {
+                saveScore({
+                    date: new Date().toLocaleTimeString(),
+                    points: currentPoints,
+                    series: selectedSeries.join(', ')
+                });
+            }
+            showSetup();
+        });
+
+        function showSetup() {
+            setupScreen.classList.remove('hidden');
+            practiceScreen.classList.add('hidden');
+            scoreBoard.classList.remove('hidden');
+            if (sessionScores.length === 0) scoreBoard.classList.add('hidden');
+        }
+
+        function startPractice() {
+            currentPoints = 0;
+            updateScoreDisplay();
+            setupScreen.classList.add('hidden');
+            scoreBoard.classList.add('hidden');
+            practiceScreen.classList.remove('hidden');
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            const a = selectedSeries[Math.floor(Math.random() * selectedSeries.length)];
+            const b = Math.floor(Math.random() * 11); // 0 to 10
+            currentQuestion = { a, b, answer: a * b };
+            questionText.textContent = `${a} × ${b} =`;
+            answerInput.value = '';
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }
+
+        function updateScoreDisplay() {
+            currentScoreDisplay.textContent = `Punkte: ${currentPoints}`;
+        }
+
+        numBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.dataset.val;
+                if (val === 'clear') {
+                    answerInput.value = '';
+                } else if (val === 'enter') {
+                    checkAnswer();
+                } else {
+                    if (answerInput.value.length < 3) {
+                        answerInput.value += val;
+                    }
+                }
+            });
+        });
+
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value);
+            if (isNaN(userAnswer)) return;
+
+            if (userAnswer === currentQuestion.answer) {
+                currentPoints += 10;
+                showFeedback('Richtig! +10', 'correct');
+                setTimeout(nextQuestion, 1000);
+            } else {
+                currentPoints = Math.max(0, currentPoints - 10); // Optionally don't go below 0, or allow negative
+                // Requirement says "10 points minus", usually means subtraction. 
+                // Let's allow negative if the user didn't specify, but often kids prefer non-negative.
+                // Re-reading: "10 Punkte Minutes" (typo for minus).
+                // I will allow negative as it's more standard for "10 points minus".
+                
+                // Let's stick to simple subtraction.
+                // Actually, let's re-read carefully: "10 Punkte Minutes"
+                // I'll just do: currentPoints -= 10;
+                
+                showFeedback('Falsch! -10', 'wrong');
+                setTimeout(nextQuestion, 1000);
+            }
+            updateScoreDisplay();
+        }
+
+        function showFeedback(text, type) {
+            feedback.textContent = text;
+            feedback.className = `feedback ${type}`;
+        }
 
         function saveScore(score) {
             sessionScores.push(score);
@@ -87,11 +201,10 @@
             scoreBoard.classList.remove('hidden');
             scoreList.innerHTML = '';
             
-            // Show latest runs (newest first)
             [...sessionScores].reverse().forEach(s => {
                 const li = document.createElement('li');
                 li.className = 'score-item';
-                li.innerHTML = `<span>${s.date}</span> <strong>${s.points} / ${s.total} Points</strong>`;
+                li.innerHTML = `<span>${s.date} (Reihen: ${s.series})</span> <strong>${s.points} Punkte</strong>`;
                 scoreList.appendChild(li);
             });
         }
