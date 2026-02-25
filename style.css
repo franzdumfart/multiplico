@@ -34,12 +34,12 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, var(--primary-color), #81c784);
+    background: linear-gradient(135deg, #e67e00, #ff9800);
     padding: 12px 20px;
     border-radius: 16px;
     color: white;
     margin-bottom: 25px;
-    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+    box-shadow: 0 4px 12px rgba(230, 126, 0, 0.25);
     text-align: left;
 }
 
