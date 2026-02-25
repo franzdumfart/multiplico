@@ -402,7 +402,21 @@ h1 {
 
 .progress-matrix td:hover {
     background-color: #f0f0f0;
-    cursor: help;
+    cursor: pointer;
+}
+
+/* Tippy theme customization */
+.tippy-box[data-theme~='light-border'] {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    font-size: 0.9rem;
+    padding: 5px;
+    border-radius: 8px;
+}
+.tippy-content {
+    line-height: 1.4;
 }
 
 /* Practice Screen Styles */
