@@ -535,6 +535,15 @@ h1 {
     box-shadow: none;
 }
 
+.num-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f0f0f0;
+    color: #ccc;
+    box-shadow: none;
+    transform: none;
+}
+
 .num-btn[data-val="clear"] {
     color: #f44336;
 }

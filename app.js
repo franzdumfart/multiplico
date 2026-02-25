@@ -28,6 +28,7 @@ const timerDisplay = document.getElementById('timer-display');
 const questionCounter = document.getElementById('question-counter');
 const feedback = document.getElementById('feedback');
 const numBtns = document.querySelectorAll('.num-btn');
+const btnOk = document.getElementById('btn-ok');
 
 const resultModal = document.getElementById('result-modal');
 const resultSummary = document.getElementById('result-summary');
@@ -405,6 +406,14 @@ answerInput.addEventListener('keydown', (e) => {
     }
 });
 
+answerInput.addEventListener('input', () => {
+    updateOkButtonState();
+});
+
+function updateOkButtonState() {
+    btnOk.disabled = (answerInput.value.trim() === '');
+}
+
 function showSetup() {
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
@@ -428,6 +437,7 @@ function startPractice() {
     
     answerInput.focus();
     
+    updateOkButtonState();
     startTimer();
     nextQuestion();
 }
@@ -518,6 +528,7 @@ function nextQuestion() {
     currentQuestion = { a, b, answer: a * b };
     questionText.textContent = `${a} × ${b} =`;
     answerInput.value = '';
+    updateOkButtonState();
     
     if (currentGameMode === 'count') {
         questionCounter.textContent = `Frage ${questionsAnswered + 1} von 10`;
@@ -583,6 +594,7 @@ numBtns.forEach(btn => {
                 answerInput.value += val;
             }
         }
+        updateOkButtonState();
         answerInput.focus();
     });
 });
