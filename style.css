@@ -91,11 +91,11 @@ h1 {
 }
 
 .checkbox-item input:checked ~ .checkbox-label {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-    color: white;
+    background-color: #f0f9f0;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 #1976D2;
+    box-shadow: 0 6px 0 var(--primary-color);
 }
 
 .checkbox-item input:checked ~ .checkbox-label::after {
