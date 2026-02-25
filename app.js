@@ -5,12 +5,14 @@ const userListContainer = document.getElementById('user-list');
 const newUserInput = document.getElementById('new-user-name');
 const btnAddUser = document.getElementById('btn-add-user');
 const btnSwitchUser = document.getElementById('btn-switch-user');
+const btnEditUser = document.getElementById('btn-edit-user');
 const displayUserName = document.getElementById('display-user-name');
 
 const seriesContainer = document.getElementById('series-selection');
 const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
 const btnShowMatrix = document.getElementById('btn-show-matrix');
+const btnExportCSV = document.getElementById('btn-export-csv');
 const btnAbort = document.getElementById('btn-abort');
 const scoreBoard = document.getElementById('score-board');
 const scoreListTimed = document.getElementById('score-list-timed');
@@ -34,33 +36,78 @@ const matrixModal = document.getElementById('matrix-modal');
 const btnMatrixClose = document.getElementById('btn-matrix-close');
 const progressMatrixTable = document.getElementById('progress-matrix');
 
-let users = JSON.parse(localStorage.getItem('multiplico_users')) || [];
-let currentUser = localStorage.getItem('multiplico_current_user') || null;
+let users = [];
+let currentUser = null;
 
-// Simple migration for existing single user
-if (users.length === 0) {
-    const existingScores = localStorage.getItem('multiplico_scores');
-    if (existingScores) {
-        // We have old data, create a "Gast" user and move data
+async function initApp() {
+    await storage.init();
+    
+    // Load users from storage
+    users = await storage.getItem('multiplico_users') || [];
+    currentUser = await storage.getItem('multiplico_current_user') || null;
+
+    // Simple migration for existing single user (from localStorage to IndexedDB or within IndexedDB)
+    if (users.length === 0) {
+        // Check localStorage for old data
+        const localUsers = JSON.parse(localStorage.getItem('multiplico_users'));
+        if (localUsers) {
+            users = localUsers;
+            await storage.setItem('multiplico_users', users);
+            
+            // Migrate each user's data
+            for (const user of users) {
+                const keys = ['scores', 'mistakes', 'solved', 'selected_series'];
+                for (const suffix of keys) {
+                    const oldKey = `multiplico_${user}_${suffix}`;
+                    const data = localStorage.getItem(oldKey);
+                    if (data) {
+                        await storage.setItem(oldKey, JSON.parse(data));
+                        // Keep localStorage as backup for now or remove? User asked for persistent, IndexedDB is better.
+                    }
+                }
+            }
+            const localCurrentUser = localStorage.getItem('multiplico_current_user');
+            if (localCurrentUser) {
+                currentUser = localCurrentUser;
+                await storage.setItem('multiplico_current_user', currentUser);
+            }
+        } else {
+            // Check for very old single-user data in localStorage
+            const existingScores = localStorage.getItem('multiplico_scores');
+            if (existingScores) {
+                const defaultUser = 'Gast';
+                users.push(defaultUser);
+                await storage.setItem('multiplico_users', users);
+                
+                await storage.setItem(`multiplico_${defaultUser}_scores`, JSON.parse(existingScores));
+                await storage.setItem(`multiplico_${defaultUser}_mistakes`, JSON.parse(localStorage.getItem('multiplico_mistakes') || '[]'));
+                await storage.setItem(`multiplico_${defaultUser}_solved`, JSON.parse(localStorage.getItem('multiplico_solved') || '{}'));
+                await storage.setItem(`multiplico_${defaultUser}_selected_series`, JSON.parse(localStorage.getItem('multiplico_selected_series') || 'null'));
+                
+                if (!currentUser) currentUser = defaultUser;
+                await storage.setItem('multiplico_current_user', currentUser);
+            }
+        }
+    }
+
+    // Initialize User Management
+    if (!currentUser && users.length === 0) {
+        // First time user: create a "Gast" user and start with it
         const defaultUser = 'Gast';
         users.push(defaultUser);
-        localStorage.setItem('multiplico_users', JSON.stringify(users));
-        
-        localStorage.setItem(`multiplico_${defaultUser}_scores`, existingScores);
-        localStorage.setItem(`multiplico_${defaultUser}_mistakes`, localStorage.getItem('multiplico_mistakes') || '[]');
-        localStorage.setItem(`multiplico_${defaultUser}_solved`, localStorage.getItem('multiplico_solved') || '{}');
-        localStorage.setItem(`multiplico_${defaultUser}_selected_series`, localStorage.getItem('multiplico_selected_series') || 'null');
-        
-        // Cleanup old keys
-        localStorage.removeItem('multiplico_scores');
-        localStorage.removeItem('multiplico_mistakes');
-        localStorage.removeItem('multiplico_solved');
-        localStorage.removeItem('multiplico_selected_series');
-        
-        if (!currentUser) currentUser = defaultUser;
-        localStorage.setItem('multiplico_current_user', currentUser);
+        await storage.setItem('multiplico_users', users);
+        currentUser = defaultUser;
+        await storage.setItem('multiplico_current_user', defaultUser);
+    }
+
+    if (currentUser) {
+        await selectUser(currentUser);
+    } else {
+        renderUserSelection();
     }
 }
+
+initApp();
 
 let sessionScores = [];
 let mistakes = [];
@@ -77,13 +124,7 @@ let timerInterval = null;
 let isActive = false;
 let questionPool = [];
 
-// Initialize User Management
-if (currentUser) {
-    loadUserData(currentUser);
-    showSetupScreen();
-} else {
-    renderUserSelection();
-}
+// Initialize User Management (moved to initApp)
 
 function renderUserSelection() {
     userSelectionScreen.classList.remove('hidden');
@@ -100,30 +141,68 @@ function renderUserSelection() {
         userListContainer.appendChild(info);
     } else {
         users.forEach(user => {
+            const userCard = document.createElement('div');
+            userCard.className = 'user-card';
+
             const btn = document.createElement('button');
             btn.className = 'user-btn';
             btn.textContent = user;
             btn.addEventListener('click', () => selectUser(user));
-            userListContainer.appendChild(btn);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-delete-user';
+            deleteBtn.innerHTML = '✖';
+            deleteBtn.title = 'Benutzer löschen';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteUser(user);
+            });
+
+            userCard.appendChild(btn);
+            userCard.appendChild(deleteBtn);
+            userListContainer.appendChild(userCard);
         });
     }
 }
 
-function selectUser(userName) {
+async function deleteUser(userName) {
+    if (confirm(`Möchtest du den Benutzer "${userName}" und alle seine Daten wirklich löschen?`)) {
+        // Remove from users list
+        users = users.filter(u => u !== userName);
+        await storage.setItem('multiplico_users', users);
+
+        // Delete namespaced data
+        const prefix = `multiplico_${userName}_`;
+        const keysToDelete = ['scores', 'mistakes', 'solved', 'selected_series'];
+        for (const suffix of keysToDelete) {
+            await storage.removeItem(prefix + suffix);
+        }
+
+        // If it was the current user, clear it
+        if (currentUser === userName) {
+            currentUser = null;
+            await storage.removeItem('multiplico_current_user');
+        }
+
+        renderUserSelection();
+    }
+}
+
+async function selectUser(userName) {
     currentUser = userName;
-    localStorage.setItem('multiplico_current_user', userName);
-    loadUserData(userName);
+    await storage.setItem('multiplico_current_user', userName);
+    await loadUserData(userName);
     showSetupScreen();
 }
 
-function loadUserData(userName) {
+async function loadUserData(userName) {
     displayUserName.textContent = userName;
     
     // Namespaced data loading
-    sessionScores = JSON.parse(localStorage.getItem(`multiplico_${userName}_scores`)) || [];
-    mistakes = JSON.parse(localStorage.getItem(`multiplico_${userName}_mistakes`)) || [];
-    solvedProblems = JSON.parse(localStorage.getItem(`multiplico_${userName}_solved`)) || {};
-    savedSeries = JSON.parse(localStorage.getItem(`multiplico_${userName}_selected_series`)) || null;
+    sessionScores = await storage.getItem(`multiplico_${userName}_scores`) || [];
+    mistakes = await storage.getItem(`multiplico_${userName}_mistakes`) || [];
+    solvedProblems = await storage.getItem(`multiplico_${userName}_solved`) || {};
+    savedSeries = await storage.getItem(`multiplico_${userName}_selected_series`) || null;
     
     // Refresh UI with user data
     initSeriesCheckboxes();
@@ -138,11 +217,11 @@ function showSetupScreen() {
     scoreBoard.classList.remove('hidden');
 }
 
-btnAddUser.addEventListener('click', () => {
+btnAddUser.addEventListener('click', async () => {
     const name = newUserInput.value.trim();
     if (name && !users.includes(name)) {
         users.push(name);
-        localStorage.setItem('multiplico_users', JSON.stringify(users));
+        await storage.setItem('multiplico_users', users);
         newUserInput.value = '';
         renderUserSelection();
     } else if (users.includes(name)) {
@@ -150,10 +229,45 @@ btnAddUser.addEventListener('click', () => {
     }
 });
 
-btnSwitchUser.addEventListener('click', () => {
+btnSwitchUser.addEventListener('click', async () => {
     currentUser = null;
-    localStorage.removeItem('multiplico_current_user');
+    await storage.removeItem('multiplico_current_user');
     renderUserSelection();
+});
+
+btnEditUser.addEventListener('click', async () => {
+    const newName = prompt('Wie möchtest du heißen?', currentUser);
+    if (newName && newName.trim() !== '' && newName !== currentUser) {
+        const trimmedName = newName.trim();
+        if (users.includes(trimmedName)) {
+            alert('Dieser Name existiert bereits!');
+            return;
+        }
+
+        // Update users list
+        const index = users.indexOf(currentUser);
+        if (index !== -1) {
+            users[index] = trimmedName;
+            await storage.setItem('multiplico_users', users);
+        }
+
+        // Migrate data to new name
+        const oldPrefix = `multiplico_${currentUser}_`;
+        const newPrefix = `multiplico_${trimmedName}_`;
+
+        const keysToMigrate = ['scores', 'mistakes', 'solved', 'selected_series'];
+        for (const suffix of keysToMigrate) {
+            const data = await storage.getItem(oldPrefix + suffix);
+            if (data) {
+                await storage.setItem(newPrefix + suffix, data);
+                await storage.removeItem(oldPrefix + suffix);
+            }
+        }
+
+        currentUser = trimmedName;
+        await storage.setItem('multiplico_current_user', trimmedName);
+        await loadUserData(trimmedName);
+    }
 });
 
 function initSeriesCheckboxes() {
@@ -185,12 +299,12 @@ function initSeriesCheckboxes() {
     }
 }
 
-btnReset.addEventListener('click', () => {
+btnReset.addEventListener('click', async () => {
     if (confirm('Möchtest du wirklich alle deine Punkte, Fehler und deinen Fortschritt löschen? Dies kann nicht rückgängig gemacht werden.')) {
-        localStorage.removeItem(`multiplico_${currentUser}_scores`);
-        localStorage.removeItem(`multiplico_${currentUser}_mistakes`);
-        localStorage.removeItem(`multiplico_${currentUser}_solved`);
-        localStorage.removeItem(`multiplico_${currentUser}_selected_series`);
+        await storage.removeItem(`multiplico_${currentUser}_scores`);
+        await storage.removeItem(`multiplico_${currentUser}_mistakes`);
+        await storage.removeItem(`multiplico_${currentUser}_solved`);
+        await storage.removeItem(`multiplico_${currentUser}_selected_series`);
         sessionScores = [];
         mistakes = [];
         solvedProblems = {};
@@ -201,12 +315,12 @@ btnReset.addEventListener('click', () => {
     }
 });
 
-btnStart.addEventListener('click', () => {
+btnStart.addEventListener('click', async () => {
     selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
         .map(cb => parseInt(cb.value));
     
     // Save selection for next time
-    localStorage.setItem(`multiplico_${currentUser}_selected_series`, JSON.stringify(selectedSeries));
+    await storage.setItem(`multiplico_${currentUser}_selected_series`, selectedSeries);
     
     currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
 
@@ -240,6 +354,33 @@ btnShowMatrix.addEventListener('click', () => {
 btnMatrixClose.addEventListener('click', () => {
     matrixModal.classList.add('hidden');
 });
+
+btnExportCSV.addEventListener('click', () => {
+    exportToCSV();
+});
+
+function exportToCSV() {
+    if (sessionScores.length === 0) {
+        alert('Keine Daten zum Exportieren vorhanden!');
+        return;
+    }
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Datum,Zeit,Modus,Punkte,Reihen\r\n";
+
+    sessionScores.forEach(s => {
+        const row = [s.date, s.time, s.mode, s.points, `"${s.series}"`].join(",");
+        csvContent += row + "\r\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `multiplico_${currentUser}_ergebnisse.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
 // Allow keyboard input and Enter key
 answerInput.addEventListener('keydown', (e) => {
@@ -430,7 +571,7 @@ numBtns.forEach(btn => {
     });
 });
 
-function checkAnswer() {
+async function checkAnswer() {
     if (!isActive) return;
     const userAnswer = parseInt(answerInput.value);
     if (isNaN(userAnswer)) return;
@@ -441,10 +582,10 @@ function checkAnswer() {
         currentPoints += 10;
         showFeedback('Richtig! +10', 'correct');
         
-        trackAttempt(currentQuestion.a, currentQuestion.b, true);
+        await trackAttempt(currentQuestion.a, currentQuestion.b, true);
 
         if (currentGameMode === 'mistakes') {
-            removeMistake(currentQuestion.a, currentQuestion.b);
+            await removeMistake(currentQuestion.a, currentQuestion.b);
         }
         
         nextQuestion();
@@ -452,10 +593,10 @@ function checkAnswer() {
         currentPoints = Math.max(-500, currentPoints - 10);
         showFeedback(`Falsch! ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
         
-        trackAttempt(currentQuestion.a, currentQuestion.b, false);
+        await trackAttempt(currentQuestion.a, currentQuestion.b, false);
 
         if (currentGameMode !== 'mistakes') {
-            addMistake(currentQuestion.a, currentQuestion.b);
+            await addMistake(currentQuestion.a, currentQuestion.b);
         }
         
         nextQuestion();
@@ -463,21 +604,21 @@ function checkAnswer() {
     updateScoreDisplay();
 }
 
-function addMistake(a, b) {
+async function addMistake(a, b) {
     const exists = mistakes.some(m => m.a === a && m.b === b);
     if (!exists) {
         mistakes.push({ a, b });
-        saveMistakes();
+        await saveMistakes();
     }
 }
 
-function removeMistake(a, b) {
+async function removeMistake(a, b) {
     mistakes = mistakes.filter(m => !(m.a === a && m.b === b));
-    saveMistakes();
+    await saveMistakes();
 }
 
-function saveMistakes() {
-    localStorage.setItem(`multiplico_${currentUser}_mistakes`, JSON.stringify(mistakes));
+async function saveMistakes() {
+    await storage.setItem(`multiplico_${currentUser}_mistakes`, mistakes);
     updateMistakesCount();
 }
 
@@ -495,13 +636,13 @@ function showFeedback(text, type) {
     feedback.className = `feedback ${type}`;
 }
 
-function saveScore(score) {
+async function saveScore(score) {
     sessionScores.push(score);
-    localStorage.setItem(`multiplico_${currentUser}_scores`, JSON.stringify(sessionScores));
+    await storage.setItem(`multiplico_${currentUser}_scores`, sessionScores);
     updateScoreBoard();
 }
 
-function trackAttempt(a, b, isCorrect) {
+async function trackAttempt(a, b, isCorrect) {
     // Store both directions (a*b and b*a) as they are the same calculation
     const key1 = `${a}x${b}`;
     const key2 = `${b}x${a}`;
@@ -520,7 +661,7 @@ function trackAttempt(a, b, isCorrect) {
     };
     solvedProblems[key1] = attemptData;
     solvedProblems[key2] = attemptData;
-    localStorage.setItem(`multiplico_${currentUser}_solved`, JSON.stringify(solvedProblems));
+    await storage.setItem(`multiplico_${currentUser}_solved`, solvedProblems);
 }
 
 function renderMatrix() {

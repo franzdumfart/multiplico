@@ -562,6 +562,7 @@ h1 {
 }
 
 .user-btn {
+    flex: 1;
     background-color: #fff;
     border: 2px solid #eee;
     padding: 12px 20px;
@@ -571,6 +572,34 @@ h1 {
     transition: all 0.2s;
     box-shadow: 0 4px 0 #eee;
     min-width: 80px;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.btn-delete-user {
+    background: #ff5252;
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-delete-user:hover {
+    background-color: #ff1744;
+    transform: scale(1.1);
 }
 
 .user-btn:hover {
