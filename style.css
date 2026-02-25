@@ -490,6 +490,8 @@ h1 {
     font-weight: 800;
     margin-bottom: 0;
     white-space: nowrap;
+    width: 200px;
+    text-align: right;
 }
 
 #answer-input {
