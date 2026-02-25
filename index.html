@@ -16,18 +16,45 @@
                 <!-- Filled via JS -->
             </div>
             
+            <div class="section-title">Spielmodus wählen</div>
+            <div class="mode-selection">
+                <div class="mode-item">
+                    <input type="radio" name="game-mode" id="mode-endless" value="endless" checked>
+                    <label for="mode-endless" class="mode-label">
+                        <strong>Endlos</strong>
+                        <span>Kein Zeitlimit</span>
+                    </label>
+                </div>
+                <div class="mode-item">
+                    <input type="radio" name="game-mode" id="mode-timed" value="timed">
+                    <label for="mode-timed" class="mode-label">
+                        <strong>5 Minuten</strong>
+                        <span>Zeit läuft ab</span>
+                    </label>
+                </div>
+                <div class="mode-item">
+                    <input type="radio" name="game-mode" id="mode-count" value="count">
+                    <label for="mode-count" class="mode-label">
+                        <strong>10 Fragen</strong>
+                        <span>Schnelligkeit zählt</span>
+                    </label>
+                </div>
+            </div>
+            
             <button class="btn-start" id="btn-start">Jetzt üben</button>
         </div>
 
         <div id="practice-screen" class="hidden">
             <div class="session-info">
-                <button id="btn-back" class="btn-small">⬅ Zurück</button>
+                <button id="btn-abort" class="btn-small btn-danger">✖ Abbrechen</button>
+                <div id="timer-display" class="timer-display">Zeit: 0:00</div>
                 <div id="current-score-display">Punkte: 0</div>
             </div>
             
             <div class="question-container">
+                <div id="question-counter" class="question-counter"></div>
                 <div id="question-text">5 × 3 =</div>
-                <input type="number" id="answer-input" readonly placeholder="?">
+                <input type="number" id="answer-input" placeholder="?">
             </div>
 
             <div class="numpad">
@@ -51,6 +78,15 @@
             <div class="section-title">Deine Punkte</div>
             <ul id="score-list" class="score-list"></ul>
         </div>
+
+        <!-- Result Modal -->
+        <div id="result-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2>Super gemacht!</h2>
+                <div id="result-summary"></div>
+                <button id="btn-modal-close" class="btn-start">Nochmal spielen</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -58,20 +94,31 @@
         const practiceScreen = document.getElementById('practice-screen');
         const seriesContainer = document.getElementById('series-selection');
         const btnStart = document.getElementById('btn-start');
-        const btnBack = document.getElementById('btn-back');
+        const btnAbort = document.getElementById('btn-abort');
         const scoreBoard = document.getElementById('score-board');
         const scoreList = document.getElementById('score-list');
         
         const questionText = document.getElementById('question-text');
         const answerInput = document.getElementById('answer-input');
         const currentScoreDisplay = document.getElementById('current-score-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const questionCounter = document.getElementById('question-counter');
         const feedback = document.getElementById('feedback');
         const numBtns = document.querySelectorAll('.num-btn');
+        
+        const resultModal = document.getElementById('result-modal');
+        const resultSummary = document.getElementById('result-summary');
+        const btnModalClose = document.getElementById('btn-modal-close');
         
         let sessionScores = [];
         let currentPoints = 0;
         let selectedSeries = [];
         let currentQuestion = { a: 0, b: 0, answer: 0 };
+        let currentGameMode = 'endless';
+        let questionsAnswered = 0;
+        let startTime = 0;
+        let timerInterval = null;
+        let isActive = false;
 
         // Initialize multiplication series 0 to 10
         for (let i = 0; i <= 10; i++) {
@@ -99,22 +146,28 @@
                 .map(cb => parseInt(cb.value));
             
             if (selectedSeries.length === 0) {
-                alert('Please select at least one series!');
+                alert('Bitte wähle mindestens eine Reihe aus!');
                 return;
             }
 
+            currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
             startPractice();
         });
 
-        btnBack.addEventListener('click', () => {
-            if (currentPoints !== 0) {
-                saveScore({
-                    date: new Date().toLocaleTimeString(),
-                    points: currentPoints,
-                    series: selectedSeries.join(', ')
-                });
-            }
+        btnAbort.addEventListener('click', () => {
+            endSession(true);
+        });
+
+        btnModalClose.addEventListener('click', () => {
+            resultModal.classList.add('hidden');
             showSetup();
+        });
+
+        // Allow keyboard input and Enter key
+        answerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
         });
 
         function showSetup() {
@@ -126,14 +179,65 @@
 
         function startPractice() {
             currentPoints = 0;
+            questionsAnswered = 0;
+            isActive = true;
             updateScoreDisplay();
+            
             setupScreen.classList.add('hidden');
             scoreBoard.classList.add('hidden');
             practiceScreen.classList.remove('hidden');
+            
+            answerInput.focus();
+            
+            startTimer();
             nextQuestion();
         }
 
+        function startTimer() {
+            startTime = Date.now();
+            if (timerInterval) clearInterval(timerInterval);
+            
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                updateTimerDisplay();
+                
+                // Mode logic
+                if (currentGameMode === 'timed') {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    const remaining = 300 - elapsed;
+                    if (remaining <= 0) {
+                        endSession();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            
+            if (currentGameMode === 'timed') {
+                const remaining = Math.max(0, 300 - elapsed);
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerDisplay.textContent = `Zeit: ${mins}:${secs.toString().padStart(2, '0')}`;
+                timerDisplay.style.color = remaining < 30 ? '#ff5252' : '';
+            } else {
+                const mins = Math.floor(elapsed / 60);
+                const secs = elapsed % 60;
+                timerDisplay.textContent = `Zeit: ${mins}:${secs.toString().padStart(2, '0')}`;
+                timerDisplay.style.color = '';
+            }
+        }
+
         function nextQuestion() {
+            if (!isActive) return;
+
+            // Check if count mode is finished
+            if (currentGameMode === 'count' && questionsAnswered >= 10) {
+                endSession();
+                return;
+            }
+
             const a = selectedSeries[Math.floor(Math.random() * selectedSeries.length)];
             const b = Math.floor(Math.random() * 11); // 0 to 10
             currentQuestion = { a, b, answer: a * b };
@@ -141,6 +245,52 @@
             answerInput.value = '';
             feedback.textContent = '';
             feedback.className = 'feedback';
+            
+            if (currentGameMode === 'count') {
+                questionCounter.textContent = `Frage ${questionsAnswered + 1} von 10`;
+            } else {
+                questionCounter.textContent = `Frage ${questionsAnswered + 1}`;
+            }
+            
+            answerInput.focus();
+        }
+
+        function endSession(aborted = false) {
+            isActive = false;
+            clearInterval(timerInterval);
+            
+            if (!aborted && (currentPoints !== 0 || questionsAnswered > 0)) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
+                
+                const modeLabel = {
+                    'endless': 'Endlos',
+                    'timed': '5 Min',
+                    'count': '10 Fragen'
+                }[currentGameMode];
+
+                saveScore({
+                    date: new Date().toLocaleTimeString(),
+                    points: currentPoints,
+                    series: selectedSeries.join(', '),
+                    mode: modeLabel,
+                    time: timeStr
+                });
+
+                showResults(currentPoints, questionsAnswered, timeStr);
+            } else {
+                showSetup();
+            }
+        }
+
+        function showResults(points, count, time) {
+            let summary = `Du hast <strong>${points} Punkte</strong> erreicht!<br><br>`;
+            summary += `Beantwortete Fragen: ${count}<br>`;
+            summary += `Zeit: ${time}<br>`;
+            summary += `Modus: ${currentGameMode === 'timed' ? '5 Minuten' : (currentGameMode === 'count' ? '10 Fragen' : 'Endlos')}`;
+            
+            resultSummary.innerHTML = summary;
+            resultModal.classList.remove('hidden');
         }
 
         function updateScoreDisplay() {
@@ -159,30 +309,25 @@
                         answerInput.value += val;
                     }
                 }
+                answerInput.focus();
             });
         });
 
         function checkAnswer() {
+            if (!isActive) return;
             const userAnswer = parseInt(answerInput.value);
             if (isNaN(userAnswer)) return;
+
+            questionsAnswered++;
 
             if (userAnswer === currentQuestion.answer) {
                 currentPoints += 10;
                 showFeedback('Richtig! +10', 'correct');
-                setTimeout(nextQuestion, 1000);
+                setTimeout(nextQuestion, 600);
             } else {
-                currentPoints = Math.max(0, currentPoints - 10); // Optionally don't go below 0, or allow negative
-                // Requirement says "10 points minus", usually means subtraction. 
-                // Let's allow negative if the user didn't specify, but often kids prefer non-negative.
-                // Re-reading: "10 Punkte Minutes" (typo for minus).
-                // I will allow negative as it's more standard for "10 points minus".
-                
-                // Let's stick to simple subtraction.
-                // Actually, let's re-read carefully: "10 Punkte Minutes"
-                // I'll just do: currentPoints -= 10;
-                
-                showFeedback('Falsch! -10', 'wrong');
-                setTimeout(nextQuestion, 1000);
+                currentPoints = Math.max(-500, currentPoints - 10);
+                showFeedback(`Falsch! Es wäre ${currentQuestion.answer} gewesen.`, 'wrong');
+                setTimeout(nextQuestion, 1500);
             }
             updateScoreDisplay();
         }
@@ -204,7 +349,7 @@
             [...sessionScores].reverse().forEach(s => {
                 const li = document.createElement('li');
                 li.className = 'score-item';
-                li.innerHTML = `<span>${s.date} (Reihen: ${s.series})</span> <strong>${s.points} Punkte</strong>`;
+                li.innerHTML = `<span>${s.date} (${s.mode}, ${s.time})</span> <strong>${s.points} Pkt</strong>`;
                 scoreList.appendChild(li);
             });
         }
