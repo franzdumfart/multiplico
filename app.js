@@ -46,6 +46,7 @@ const statTotalPlayed = document.getElementById('stat-total-played');
 const statTotalCorrect = document.getElementById('stat-total-correct');
 const statTotalWrong = document.getElementById('stat-total-wrong');
 
+const headerUserInfo = document.getElementById('header-user-info');
 const totalPointsDisplay = document.getElementById('total-points-display');
 const totalPointsValue = document.getElementById('total-points-value');
 
@@ -162,7 +163,7 @@ function renderUserSelection() {
     setupScreen.classList.add('hidden');
     practiceScreen.classList.add('hidden');
     scoreBoard.classList.add('hidden');
-    totalPointsDisplay.classList.add('hidden');
+    headerUserInfo.classList.add('hidden');
     
     userListContainer.innerHTML = '';
     if (users.length === 0) {
@@ -228,7 +229,7 @@ async function selectUser(userName) {
 }
 
 async function loadUserData(userName) {
-    displayUserName.textContent = userName;
+    displayUserName.textContent = `Hallo ${userName}! 👋`;
     
     // Namespaced data loading
     sessionScores = await storage.getItem(`multiplico_${userName}_scores`) || [];
@@ -247,7 +248,7 @@ function showSetupScreen() {
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
     scoreBoard.classList.remove('hidden');
-    totalPointsDisplay.classList.remove('hidden');
+    headerUserInfo.classList.remove('hidden');
 }
 
 btnAddUser.addEventListener('click', async () => {
@@ -456,7 +457,7 @@ function startPractice() {
     
     setupScreen.classList.add('hidden');
     scoreBoard.classList.add('hidden');
-    totalPointsDisplay.classList.add('hidden');
+    headerUserInfo.classList.add('hidden');
     practiceScreen.classList.remove('hidden');
     
     // Generate question pool for the session (only for normal modes)

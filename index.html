@@ -14,6 +14,20 @@
     <div class="container">
         <img src="Images/logo.png" alt="multiplico Logo" class="logo">
         
+        <div id="header-user-info" class="header-user-info hidden">
+            <div class="user-greeting">
+                <span id="display-user-name"></span>
+                <div class="user-actions">
+                    <button id="btn-edit-user" class="btn-text-tiny">Name ändern</button>
+                    <button id="btn-switch-user" class="btn-text-tiny">Wechseln</button>
+                </div>
+            </div>
+            <div id="total-points-display" class="total-points-mini">
+                <div class="total-points-label">Gesamtpunkte</div>
+                <div id="total-points-value" class="total-points-value">0</div>
+            </div>
+        </div>
+        
         <div id="user-selection-screen">
             <div class="section-title">Wer spielt gerade?</div>
             <div id="user-list" class="user-list">
@@ -26,11 +40,6 @@
         </div>
 
         <div id="setup-screen" class="hidden">
-            <div class="current-user-info">
-                Hallo <strong id="display-user-name"></strong>! 👋
-                <button id="btn-edit-user" class="btn-text">Name ändern</button>
-                <button id="btn-switch-user" class="btn-text">Wechseln</button>
-            </div>
             <div class="section-title">Welche Reihen möchtest du üben?</div>
             <div class="grid-selection" id="series-selection">
                 <!-- Filled via JS -->
@@ -109,10 +118,6 @@
             <div id="feedback" class="feedback"></div>
         </div>
 
-        <div id="total-points-display" class="total-points-display hidden">
-            <div class="total-points-label">Deine Gesamtpunkte</div>
-            <div id="total-points-value" class="total-points-value">0</div>
-        </div>
 
         <div id="score-board" class="score-board">
             <div class="ranking-tabs">
