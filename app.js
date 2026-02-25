@@ -221,6 +221,9 @@ function initSpeechRecognition() {
         if (event.error === 'not-allowed') {
             alert('Mikrofon-Zugriff wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.');
             stopListening();
+        } else if (event.error === 'network') {
+            alert('Spracherkennungs-Fehler: Netzwerk. Dies passiert oft in Brave, wenn die "Google Services for Speech Recognition" in den Einstellungen deaktiviert sind oder keine Internetverbindung besteht.');
+            stopListening();
         } else if (event.error === 'no-speech') {
             // Ignore no-speech errors in continuous mode
         } else {
