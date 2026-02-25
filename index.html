@@ -75,8 +75,22 @@
         </div>
 
         <div id="score-board" class="score-board hidden">
-            <div class="section-title">Deine Punkte</div>
-            <ul id="score-list" class="score-list"></ul>
+            <div class="section-title">Deine Bestleistungen</div>
+            
+            <div class="ranking-container">
+                <div class="ranking-column">
+                    <h4>Endlos</h4>
+                    <ul id="score-list-endless" class="score-list"></ul>
+                </div>
+                <div class="ranking-column">
+                    <h4>5 Minuten</h4>
+                    <ul id="score-list-timed" class="score-list"></ul>
+                </div>
+                <div class="ranking-column">
+                    <h4>10 Fragen</h4>
+                    <ul id="score-list-count" class="score-list"></ul>
+                </div>
+            </div>
         </div>
 
         <!-- Result Modal -->
@@ -96,7 +110,9 @@
         const btnStart = document.getElementById('btn-start');
         const btnAbort = document.getElementById('btn-abort');
         const scoreBoard = document.getElementById('score-board');
-        const scoreList = document.getElementById('score-list');
+        const scoreListEndless = document.getElementById('score-list-endless');
+        const scoreListTimed = document.getElementById('score-list-timed');
+        const scoreListCount = document.getElementById('score-list-count');
         
         const questionText = document.getElementById('question-text');
         const answerInput = document.getElementById('answer-input');
@@ -263,17 +279,11 @@
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
                 const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
                 
-                const modeLabel = {
-                    'endless': 'Endlos',
-                    'timed': '5 Min',
-                    'count': '10 Fragen'
-                }[currentGameMode];
-
                 saveScore({
                     date: new Date().toLocaleTimeString(),
                     points: currentPoints,
                     series: selectedSeries.join(', '),
-                    mode: modeLabel,
+                    mode: currentGameMode,
                     time: timeStr
                 });
 
@@ -344,13 +354,19 @@
 
         function updateScoreBoard() {
             scoreBoard.classList.remove('hidden');
-            scoreList.innerHTML = '';
+            
+            scoreListEndless.innerHTML = '';
+            scoreListTimed.innerHTML = '';
+            scoreListCount.innerHTML = '';
             
             [...sessionScores].reverse().forEach(s => {
                 const li = document.createElement('li');
                 li.className = 'score-item';
-                li.innerHTML = `<span>${s.date} (${s.mode}, ${s.time})</span> <strong>${s.points} Pkt</strong>`;
-                scoreList.appendChild(li);
+                li.innerHTML = `<span>${s.date} (${s.time})</span> <strong>${s.points} Pkt</strong>`;
+                
+                if (s.mode === 'endless') scoreListEndless.appendChild(li);
+                if (s.mode === 'timed') scoreListTimed.appendChild(li);
+                if (s.mode === 'count') scoreListCount.appendChild(li);
             });
         }
     </script>
