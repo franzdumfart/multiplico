@@ -162,39 +162,38 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recognition = null;
 let isListening = false;
 
-if (SpeechRecognition) {
+function initSpeechRecognition() {
+    if (!SpeechRecognition) return false;
+    if (recognition) return true;
+
     recognition = new SpeechRecognition();
     recognition.lang = 'de-DE';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.continuous = true; // Stay active for multiple questions
 
-    btnVoice.classList.remove('hidden');
-
     recognition.onresult = (event) => {
-        // Results can come in multiple items when continuous is true
         const lastResultIndex = event.results.length - 1;
         const speechResult = event.results[lastResultIndex][0].transcript;
         console.log('Voice result:', speechResult);
         
-        // Extract numbers from the speech result
         const numbers = speechResult.match(/\d+/);
         if (numbers) {
             console.log('Number detected:', numbers[0]);
             answerInput.value = numbers[0];
             updateOkButtonState();
-            // Automatically check the answer if a number was found
             checkAnswer();
         }
     };
 
     recognition.onstart = () => {
         console.log('Voice recognition started');
+        isListening = true;
+        btnVoice.classList.add('listening');
     };
 
     recognition.onend = () => {
         console.log('Voice recognition ended');
-        // If it was stopped by the system but we still want to listen, restart it
         if (isListening && isActive) {
             try {
                 recognition.start();
@@ -212,26 +211,48 @@ if (SpeechRecognition) {
         if (event.error === 'not-allowed') {
             alert('Mikrofon-Zugriff wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.');
             stopListening();
+        } else if (event.error === 'no-speech') {
+            // Ignore no-speech errors in continuous mode
+        } else {
+            stopListening();
         }
-        // Other errors might just stop it, onend will handle restart if appropriate
     };
+
+    return true;
 }
 
-function startListening() {
-    if (!recognition || isListening) return;
-    isListening = true;
-    btnVoice.classList.add('listening');
+// Show voice button if browser supports it
+if (SpeechRecognition) {
+    btnVoice.classList.remove('hidden');
+}
+
+async function startListening() {
+    if (!SpeechRecognition) {
+        alert("Dein Browser unterstützt leider keine Spracheingabe.");
+        return;
+    }
+
+    // Always try to get mic permission first to trigger the browser popup
     try {
-        recognition.start();
-    } catch (e) {
-        console.error('Recognition start error:', e);
-        // If it was already started, we just keep isListening true
-        if (e.name === 'InvalidStateError') {
-            // Already started, no problem
-        } else {
-            isListening = false;
-            btnVoice.classList.remove('listening');
+        console.log("Requesting microphone permission...");
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Permission granted, stop the stream immediately as we only needed it to trigger the prompt
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Now initialize and start recognition
+        if (initSpeechRecognition()) {
+            isListening = true;
+            recognition.start();
         }
+    } catch (e) {
+        console.error("Microphone access error:", e);
+        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+            alert("Mikrofon-Zugriff wurde verweigert. Ohne Mikrofon kannst du die Spracheingabe nicht nutzen.");
+        } else {
+            alert("Fehler beim Zugriff auf das Mikrofon: " + e.message);
+        }
+        isListening = false;
+        btnVoice.classList.remove("listening");
     }
 }
 
