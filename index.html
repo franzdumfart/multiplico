@@ -156,6 +156,7 @@
         let sessionScores = JSON.parse(localStorage.getItem('multiplico_scores')) || [];
         let mistakes = JSON.parse(localStorage.getItem('multiplico_mistakes')) || [];
         let solvedProblems = JSON.parse(localStorage.getItem('multiplico_solved')) || {};
+        let savedSeries = JSON.parse(localStorage.getItem('multiplico_selected_series')) || null;
         let currentPoints = 0;
         let selectedSeries = [];
         let currentQuestion = { a: 0, b: 0, answer: 0 };
@@ -187,7 +188,13 @@
             checkbox.type = 'checkbox';
             checkbox.id = 'series-' + i;
             checkbox.value = i;
-            checkbox.checked = true; // All enabled by default
+            
+            // Set checked state: use saved selection or default to all true
+            if (savedSeries === null) {
+                checkbox.checked = true;
+            } else {
+                checkbox.checked = savedSeries.includes(i);
+            }
             
             const label = document.createElement('label');
             label.className = 'checkbox-label';
@@ -208,9 +215,15 @@
                 localStorage.removeItem('multiplico_scores');
                 localStorage.removeItem('multiplico_mistakes');
                 localStorage.removeItem('multiplico_solved');
+                localStorage.removeItem('multiplico_selected_series');
                 sessionScores = [];
                 mistakes = [];
                 solvedProblems = {};
+                
+                // Reset checkboxes to default (all checked)
+                const checkboxes = seriesContainer.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = true);
+                
                 updateScoreBoard();
                 updateMistakesCount();
             }
@@ -219,6 +232,9 @@
         btnStart.addEventListener('click', () => {
             selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
                 .map(cb => parseInt(cb.value));
+            
+            // Save selection for next time
+            localStorage.setItem('multiplico_selected_series', JSON.stringify(selectedSeries));
             
             currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
 
