@@ -167,16 +167,20 @@ if (SpeechRecognition) {
     recognition.lang = 'de-DE';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = true; // Stay active for multiple questions
 
     btnVoice.classList.remove('hidden');
 
     recognition.onresult = (event) => {
-        const speechResult = event.results[0][0].transcript;
-        console.log('Spoken:', speechResult);
+        // Results can come in multiple items when continuous is true
+        const lastResultIndex = event.results.length - 1;
+        const speechResult = event.results[lastResultIndex][0].transcript;
+        console.log('Voice result:', speechResult);
         
         // Extract numbers from the speech result
         const numbers = speechResult.match(/\d+/);
         if (numbers) {
+            console.log('Number detected:', numbers[0]);
             answerInput.value = numbers[0];
             updateOkButtonState();
             // Automatically check the answer if a number was found
@@ -184,32 +188,62 @@ if (SpeechRecognition) {
         }
     };
 
-    recognition.onspeechend = () => {
-        stopListening();
+    recognition.onstart = () => {
+        console.log('Voice recognition started');
+    };
+
+    recognition.onend = () => {
+        console.log('Voice recognition ended');
+        // If it was stopped by the system but we still want to listen, restart it
+        if (isListening && isActive) {
+            try {
+                recognition.start();
+            } catch (e) {
+                console.error('Auto-restart recognition error:', e);
+            }
+        } else {
+            isListening = false;
+            btnVoice.classList.remove('listening');
+        }
     };
 
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
-        stopListening();
+        if (event.error === 'not-allowed') {
+            alert('Mikrofon-Zugriff wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.');
+            stopListening();
+        }
+        // Other errors might just stop it, onend will handle restart if appropriate
     };
 }
 
 function startListening() {
     if (!recognition || isListening) return;
+    isListening = true;
+    btnVoice.classList.add('listening');
     try {
         recognition.start();
-        isListening = true;
-        btnVoice.classList.add('listening');
     } catch (e) {
         console.error('Recognition start error:', e);
+        // If it was already started, we just keep isListening true
+        if (e.name === 'InvalidStateError') {
+            // Already started, no problem
+        } else {
+            isListening = false;
+            btnVoice.classList.remove('listening');
+        }
     }
 }
 
 function stopListening() {
-    if (!recognition || !isListening) return;
-    recognition.stop();
+    if (!recognition) return;
     isListening = false;
     btnVoice.classList.remove('listening');
+    try {
+        recognition.stop();
+    } catch (e) {
+        console.error('Recognition stop error:', e);
+    }
 }
 
 btnVoice.addEventListener('click', () => {
