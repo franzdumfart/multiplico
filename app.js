@@ -17,6 +17,7 @@ const btnAbort = document.getElementById('btn-abort');
 const scoreBoard = document.getElementById('score-board');
 const scoreListTimed = document.getElementById('score-list-timed');
 const scoreListCount = document.getElementById('score-list-count');
+const scoreListGlobal = document.getElementById('score-list-global');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const rankingPanes = document.querySelectorAll('.ranking-pane');
 
@@ -108,6 +109,21 @@ async function initApp() {
 }
 
 initApp();
+
+// Tab Switching Logic
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        
+        // Update buttons
+        tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+        
+        // Update panes
+        rankingPanes.forEach(pane => {
+            pane.classList.toggle('active', pane.id === `ranking-${target}`);
+        });
+    });
+});
 
 let sessionScores = [];
 let mistakes = [];
@@ -730,9 +746,10 @@ function renderMatrix() {
     });
 }
 
-function updateScoreBoard() {
+async function updateScoreBoard() {
     scoreListTimed.innerHTML = '';
     scoreListCount.innerHTML = '';
+    scoreListGlobal.innerHTML = '';
     
     // Filter scores: only show top 5 for each mode
     const timedScores = sessionScores.filter(s => s.mode === 'timed')
@@ -762,5 +779,32 @@ function updateScoreBoard() {
     }
     if (countScores.length === 0) {
         scoreListCount.innerHTML = '<li class="score-empty">Hier ist es noch leer. Schaffst du es unter die Top 5? Probier es aus! 🌟</li>';
+    }
+
+    // Global Ranking Logic
+    const allGlobalScores = [];
+    for (const user of users) {
+        const uScores = await storage.getItem(`multiplico_${user}_scores`) || [];
+        uScores.forEach(s => {
+            allGlobalScores.push({
+                ...s,
+                userName: user
+            });
+        });
+    }
+
+    const topGlobalScores = allGlobalScores
+        .sort((a, b) => b.points - a.points)
+        .slice(0, 10);
+
+    topGlobalScores.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'score-item';
+        li.innerHTML = `<span><strong>${s.userName}</strong>: ${s.points} Pkt (${s.mode === 'timed' ? '5 Min' : '10 Frag'})</span>`;
+        scoreListGlobal.appendChild(li);
+    });
+
+    if (topGlobalScores.length === 0) {
+        scoreListGlobal.innerHTML = '<li class="score-empty">Noch keine globalen Ergebnisse. Wer wird der erste Champion? 🏆</li>';
     }
 }
