@@ -28,6 +28,7 @@
         <div id="setup-screen" class="hidden">
             <div class="current-user-info">
                 Hallo <strong id="display-user-name"></strong>! 👋
+                <button id="btn-edit-user" class="btn-text">Name ändern</button>
                 <button id="btn-switch-user" class="btn-text">Wechseln</button>
             </div>
             <div class="section-title">Welche Reihen möchtest du üben?</div>
@@ -69,7 +70,10 @@
             
             <button class="btn-start" id="btn-start">Jetzt üben</button>
             <button class="btn-secondary" id="btn-show-matrix">Meine Erfolgs-Matrix 📊</button>
-            <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
+            <div class="setup-footer">
+                <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
+                <button class="btn-text-small" id="btn-export-csv">Daten exportieren 💾</button>
+            </div>
         </div>
 
         <div id="practice-screen" class="hidden">
@@ -141,7 +145,7 @@
             </div>
         </div>
     </div>
-
+    <script src="db.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
