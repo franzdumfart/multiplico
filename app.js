@@ -173,11 +173,21 @@ function initSpeechRecognition() {
     recognition.continuous = true; // Stay active for multiple questions
 
     recognition.onresult = (event) => {
-        const lastResultIndex = event.results.length - 1;
-        const speechResult = event.results[lastResultIndex][0].transcript;
-        console.log('Voice result:', speechResult);
+        let speechResult = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                speechResult += event.results[i][0].transcript;
+            }
+        }
         
-        const numbers = speechResult.match(/\d+/);
+        console.log('Voice result (final):', speechResult);
+        if (!speechResult) return;
+        
+        // Convert German number words to digits
+        const processedResult = convertGermanNumbersToDigits(speechResult.toLowerCase());
+        console.log('Processed voice result:', processedResult);
+        
+        const numbers = processedResult.match(/\d+/);
         if (numbers) {
             console.log('Number detected:', numbers[0]);
             answerInput.value = numbers[0];
@@ -219,6 +229,46 @@ function initSpeechRecognition() {
     };
 
     return true;
+}
+
+function convertGermanNumbersToDigits(text) {
+    const numberMap = {
+        'null': '0', 'eins': '1', 'zwei': '2', 'drei': '3', 'vier': '4', 'fünf': '5',
+        'sechs': '6', 'sieben': '7', 'acht': '8', 'neun': '9', 'zehn': '10',
+        'elf': '11', 'zwölf': '12', 'dreizehn': '13', 'vierzehn': '14', 'fünfzehn': '15',
+        'sechzehn': '16', 'siebzehn': '17', 'achtzehn': '18', 'neunzehn': '19', 'zwanzig': '20',
+        'einundzwanzig': '21', 'zweiundzwanzig': '22', 'dreiundzwanzig': '23', 'vierundzwanzig': '24',
+        'fünfundzwanzig': '25', 'sechsundzwanzig': '26', 'siebenundzwanzig': '27', 'achtundzwanzig': '28',
+        'neunundzwanzig': '29', 'dreißig': '30', 'einunddreißig': '31', 'zweiunddreißig': '32',
+        'dreiunddreißig': '33', 'vierunddreißig': '34', 'fünfunddreißig': '35', 'sechsunddreißig': '36',
+        'siebenunddreißig': '37', 'achtunddreißig': '38', 'neununddreißig': '39', 'vierzig': '40',
+        'einundvierzig': '41', 'zweiundvierzig': '42', 'dreiundvierzig': '43', 'vierundvierzig': '44',
+        'fünfundvierzig': '45', 'sechsundvierzig': '46', 'siebenundvierzig': '47', 'achtundvierzig': '48',
+        'neunundvierzig': '49', 'fünfzig': '50', 'einundfünfzig': '51', 'zweiundfünfzig': '52',
+        'dreiundfünfzig': '53', 'vierundfünfzig': '54', 'fünfundfünfzig': '55', 'sechsundfünfzig': '56',
+        'siebenundfünfzig': '57', 'achtundfünfzig': '58', 'neunundfünfzig': '59', 'sechzig': '60',
+        'einundsechzig': '61', 'zweiundsechzig': '62', 'dreiundsechzig': '63', 'vierundsechzig': '64',
+        'fünfundsechzig': '65', 'sechsundsechzig': '66', 'siebenundsechzig': '67', 'achtundsechzig': '68',
+        'neunundsechzig': '69', 'siebzig': '70', 'einundsiebzig': '71', 'zweiundsiebzig': '72',
+        'dreiundsiebzig': '73', 'vierundsiebzig': '74', 'fünfundsiebzig': '75', 'sechsundsiebzig': '76',
+        'siebenundsiebzig': '77', 'achtundsiebzig': '78', 'neunundsiebzig': '79', 'achtzig': '80',
+        'einundachtzig': '81', 'zweiundachtzig': '82', 'dreiundachtzig': '83', 'vierundachtzig': '84',
+        'fünfundachtzig': '85', 'sechsundachtzig': '86', 'siebenundachtzig': '87', 'achtundachtzig': '88',
+        'neunundachtzig': '89', 'neunzig': '90', 'einundneunzig': '91', 'zweiundneunzig': '92',
+        'dreiundneunzig': '93', 'vierundneunzig': '94', 'fünfundneunzig': '95', 'sechsundneunzig': '96',
+        'siebenundneunzig': '97', 'achtundneunzig': '98', 'neunundneunzig': '99', 'hundert': '100'
+    };
+
+    let result = text;
+    // Sort keys by length descending to match longer words first (e.g., 'einundzwanzig' before 'zwanzig')
+    const sortedKeys = Object.keys(numberMap).sort((a, b) => b.length - a.length);
+    
+    for (const key of sortedKeys) {
+        const regex = new RegExp('\\b' + key + '\\b', 'g');
+        result = result.replace(regex, numberMap[key]);
+    }
+    
+    return result;
 }
 
 // Show voice button if browser supports it
