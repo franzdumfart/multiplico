@@ -38,6 +38,9 @@ const matrixModal = document.getElementById('matrix-modal');
 const btnMatrixClose = document.getElementById('btn-matrix-close');
 const progressMatrixTable = document.getElementById('progress-matrix');
 
+const totalPointsDisplay = document.getElementById('total-points-display');
+const totalPointsValue = document.getElementById('total-points-value');
+
 let users = [];
 let currentUser = null;
 
@@ -148,6 +151,7 @@ function renderUserSelection() {
     setupScreen.classList.add('hidden');
     practiceScreen.classList.add('hidden');
     scoreBoard.classList.add('hidden');
+    totalPointsDisplay.classList.add('hidden');
     
     userListContainer.innerHTML = '';
     if (users.length === 0) {
@@ -232,6 +236,7 @@ function showSetupScreen() {
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
     scoreBoard.classList.remove('hidden');
+    totalPointsDisplay.classList.remove('hidden');
 }
 
 btnAddUser.addEventListener('click', async () => {
@@ -428,6 +433,7 @@ function startPractice() {
     
     setupScreen.classList.add('hidden');
     scoreBoard.classList.add('hidden');
+    totalPointsDisplay.classList.add('hidden');
     practiceScreen.classList.remove('hidden');
     
     // Generate question pool for the session (only for normal modes)
@@ -763,6 +769,10 @@ async function updateScoreBoard() {
     scoreListCount.innerHTML = '';
     scoreListGlobal.innerHTML = '';
     
+    // Calculate and display total points
+    const totalPoints = sessionScores.reduce((sum, s) => sum + (s.points || 0), 0);
+    totalPointsValue.textContent = totalPoints.toLocaleString('de-DE');
+
     // Filter scores: only show top 5 for each mode
     const timedScores = sessionScores.filter(s => s.mode === 'timed')
         .sort((a, b) => b.points - a.points)

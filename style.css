@@ -223,9 +223,33 @@ h1 {
 }
 
 .score-board {
-    margin-top: 30px;
+    margin-top: 10px;
     padding-top: 20px;
     border-top: 1px solid #eee;
+}
+
+.total-points-display {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary-color), #81c784);
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(76, 175, 80, 0.2);
+}
+
+.total-points-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.total-points-value {
+    font-size: 3rem;
+    font-weight: 900;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .ranking-tabs {
