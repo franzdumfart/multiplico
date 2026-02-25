@@ -1,5 +1,12 @@
 const setupScreen = document.getElementById('setup-screen');
 const practiceScreen = document.getElementById('practice-screen');
+const userSelectionScreen = document.getElementById('user-selection-screen');
+const userListContainer = document.getElementById('user-list');
+const newUserInput = document.getElementById('new-user-name');
+const btnAddUser = document.getElementById('btn-add-user');
+const btnSwitchUser = document.getElementById('btn-switch-user');
+const displayUserName = document.getElementById('display-user-name');
+
 const seriesContainer = document.getElementById('series-selection');
 const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
@@ -27,10 +34,39 @@ const matrixModal = document.getElementById('matrix-modal');
 const btnMatrixClose = document.getElementById('btn-matrix-close');
 const progressMatrixTable = document.getElementById('progress-matrix');
 
-let sessionScores = JSON.parse(localStorage.getItem('multiplico_scores')) || [];
-let mistakes = JSON.parse(localStorage.getItem('multiplico_mistakes')) || [];
-let solvedProblems = JSON.parse(localStorage.getItem('multiplico_solved')) || {};
-let savedSeries = JSON.parse(localStorage.getItem('multiplico_selected_series')) || null;
+let users = JSON.parse(localStorage.getItem('multiplico_users')) || [];
+let currentUser = localStorage.getItem('multiplico_current_user') || null;
+
+// Simple migration for existing single user
+if (users.length === 0) {
+    const existingScores = localStorage.getItem('multiplico_scores');
+    if (existingScores) {
+        // We have old data, create a "Gast" user and move data
+        const defaultUser = 'Gast';
+        users.push(defaultUser);
+        localStorage.setItem('multiplico_users', JSON.stringify(users));
+        
+        localStorage.setItem(`multiplico_${defaultUser}_scores`, existingScores);
+        localStorage.setItem(`multiplico_${defaultUser}_mistakes`, localStorage.getItem('multiplico_mistakes') || '[]');
+        localStorage.setItem(`multiplico_${defaultUser}_solved`, localStorage.getItem('multiplico_solved') || '{}');
+        localStorage.setItem(`multiplico_${defaultUser}_selected_series`, localStorage.getItem('multiplico_selected_series') || 'null');
+        
+        // Cleanup old keys
+        localStorage.removeItem('multiplico_scores');
+        localStorage.removeItem('multiplico_mistakes');
+        localStorage.removeItem('multiplico_solved');
+        localStorage.removeItem('multiplico_selected_series');
+        
+        if (!currentUser) currentUser = defaultUser;
+        localStorage.setItem('multiplico_current_user', currentUser);
+    }
+}
+
+let sessionScores = [];
+let mistakes = [];
+let solvedProblems = {};
+let savedSeries = null;
+
 let currentPoints = 0;
 let selectedSeries = [];
 let currentQuestion = { a: 0, b: 0, answer: 0 };
@@ -41,64 +77,125 @@ let timerInterval = null;
 let isActive = false;
 let questionPool = [];
 
-// Tab switching logic
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const tabId = btn.dataset.tab;
-        
-        tabBtns.forEach(b => b.classList.remove('active'));
-        rankingPanes.forEach(p => p.classList.remove('active'));
-        
-        btn.classList.add('active');
-        document.getElementById(`ranking-${tabId}`).classList.add('active');
-    });
-});
-
-// Initialize multiplication series 0 to 10
-for (let i = 0; i <= 10; i++) {
-    const item = document.createElement('div');
-    item.className = 'checkbox-item';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'series-' + i;
-    checkbox.value = i;
-    
-    // Set checked state: use saved selection or default to all true
-    if (savedSeries === null) {
-        checkbox.checked = true;
-    } else {
-        checkbox.checked = savedSeries.includes(i);
-    }
-    
-    const label = document.createElement('label');
-    label.className = 'checkbox-label';
-    label.htmlFor = 'series-' + i;
-    label.textContent = i;
-    
-    item.appendChild(checkbox);
-    item.appendChild(label);
-    seriesContainer.appendChild(item);
+// Initialize User Management
+if (currentUser) {
+    loadUserData(currentUser);
+    showSetupScreen();
+} else {
+    renderUserSelection();
 }
 
-// Initialize score board
-updateScoreBoard();
-updateMistakesCount();
+function renderUserSelection() {
+    userSelectionScreen.classList.remove('hidden');
+    setupScreen.classList.add('hidden');
+    practiceScreen.classList.add('hidden');
+    scoreBoard.classList.add('hidden');
+    
+    userListContainer.innerHTML = '';
+    if (users.length === 0) {
+        const info = document.createElement('p');
+        info.textContent = 'Noch kein User angelegt. Gib deinen Namen ein!';
+        info.style.color = '#888';
+        info.style.fontStyle = 'italic';
+        userListContainer.appendChild(info);
+    } else {
+        users.forEach(user => {
+            const btn = document.createElement('button');
+            btn.className = 'user-btn';
+            btn.textContent = user;
+            btn.addEventListener('click', () => selectUser(user));
+            userListContainer.appendChild(btn);
+        });
+    }
+}
+
+function selectUser(userName) {
+    currentUser = userName;
+    localStorage.setItem('multiplico_current_user', userName);
+    loadUserData(userName);
+    showSetupScreen();
+}
+
+function loadUserData(userName) {
+    displayUserName.textContent = userName;
+    
+    // Namespaced data loading
+    sessionScores = JSON.parse(localStorage.getItem(`multiplico_${userName}_scores`)) || [];
+    mistakes = JSON.parse(localStorage.getItem(`multiplico_${userName}_mistakes`)) || [];
+    solvedProblems = JSON.parse(localStorage.getItem(`multiplico_${userName}_solved`)) || {};
+    savedSeries = JSON.parse(localStorage.getItem(`multiplico_${userName}_selected_series`)) || null;
+    
+    // Refresh UI with user data
+    initSeriesCheckboxes();
+    updateScoreBoard();
+    updateMistakesCount();
+}
+
+function showSetupScreen() {
+    userSelectionScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    practiceScreen.classList.add('hidden');
+    scoreBoard.classList.remove('hidden');
+}
+
+btnAddUser.addEventListener('click', () => {
+    const name = newUserInput.value.trim();
+    if (name && !users.includes(name)) {
+        users.push(name);
+        localStorage.setItem('multiplico_users', JSON.stringify(users));
+        newUserInput.value = '';
+        renderUserSelection();
+    } else if (users.includes(name)) {
+        alert('Dieser Name existiert bereits!');
+    }
+});
+
+btnSwitchUser.addEventListener('click', () => {
+    currentUser = null;
+    localStorage.removeItem('multiplico_current_user');
+    renderUserSelection();
+});
+
+function initSeriesCheckboxes() {
+    seriesContainer.innerHTML = '';
+    for (let i = 0; i <= 10; i++) {
+        const item = document.createElement('div');
+        item.className = 'checkbox-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'series-' + i;
+        checkbox.value = i;
+        
+        // Set checked state: use saved selection or default to all true
+        if (savedSeries === null) {
+            checkbox.checked = true;
+        } else {
+            checkbox.checked = savedSeries.includes(i);
+        }
+        
+        const label = document.createElement('label');
+        label.className = 'checkbox-label';
+        label.htmlFor = 'series-' + i;
+        label.textContent = i;
+        
+        item.appendChild(checkbox);
+        item.appendChild(label);
+        seriesContainer.appendChild(item);
+    }
+}
 
 btnReset.addEventListener('click', () => {
     if (confirm('Möchtest du wirklich alle deine Punkte, Fehler und deinen Fortschritt löschen? Dies kann nicht rückgängig gemacht werden.')) {
-        localStorage.removeItem('multiplico_scores');
-        localStorage.removeItem('multiplico_mistakes');
-        localStorage.removeItem('multiplico_solved');
-        localStorage.removeItem('multiplico_selected_series');
+        localStorage.removeItem(`multiplico_${currentUser}_scores`);
+        localStorage.removeItem(`multiplico_${currentUser}_mistakes`);
+        localStorage.removeItem(`multiplico_${currentUser}_solved`);
+        localStorage.removeItem(`multiplico_${currentUser}_selected_series`);
         sessionScores = [];
         mistakes = [];
         solvedProblems = {};
         
-        // Reset checkboxes to default (all checked)
-        const checkboxes = seriesContainer.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(cb => cb.checked = true);
-        
+        initSeriesCheckboxes();
         updateScoreBoard();
         updateMistakesCount();
     }
@@ -109,7 +206,7 @@ btnStart.addEventListener('click', () => {
         .map(cb => parseInt(cb.value));
     
     // Save selection for next time
-    localStorage.setItem('multiplico_selected_series', JSON.stringify(selectedSeries));
+    localStorage.setItem(`multiplico_${currentUser}_selected_series`, JSON.stringify(selectedSeries));
     
     currentGameMode = document.querySelector('input[name="game-mode"]:checked').value;
 
@@ -380,7 +477,7 @@ function removeMistake(a, b) {
 }
 
 function saveMistakes() {
-    localStorage.setItem('multiplico_mistakes', JSON.stringify(mistakes));
+    localStorage.setItem(`multiplico_${currentUser}_mistakes`, JSON.stringify(mistakes));
     updateMistakesCount();
 }
 
@@ -400,7 +497,7 @@ function showFeedback(text, type) {
 
 function saveScore(score) {
     sessionScores.push(score);
-    localStorage.setItem('multiplico_scores', JSON.stringify(sessionScores));
+    localStorage.setItem(`multiplico_${currentUser}_scores`, JSON.stringify(sessionScores));
     updateScoreBoard();
 }
 
@@ -423,7 +520,7 @@ function trackAttempt(a, b, isCorrect) {
     };
     solvedProblems[key1] = attemptData;
     solvedProblems[key2] = attemptData;
-    localStorage.setItem('multiplico_solved', JSON.stringify(solvedProblems));
+    localStorage.setItem(`multiplico_${currentUser}_solved`, JSON.stringify(solvedProblems));
 }
 
 function renderMatrix() {

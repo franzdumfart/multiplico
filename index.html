@@ -14,7 +14,22 @@
     <div class="container">
         <img src="Images/logo.png" alt="multiplico Logo" class="logo">
         
-        <div id="setup-screen">
+        <div id="user-selection-screen">
+            <div class="section-title">Wer spielt gerade?</div>
+            <div id="user-list" class="user-list">
+                <!-- Filled via JS -->
+            </div>
+            <div class="add-user-container">
+                <input type="text" id="new-user-name" placeholder="Name eingeben..." maxlength="15">
+                <button id="btn-add-user" class="btn-small">Hinzufügen</button>
+            </div>
+        </div>
+
+        <div id="setup-screen" class="hidden">
+            <div class="current-user-info">
+                Hallo <strong id="display-user-name"></strong>! 👋
+                <button id="btn-switch-user" class="btn-text">Wechseln</button>
+            </div>
             <div class="section-title">Welche Reihen möchtest du üben?</div>
             <div class="grid-selection" id="series-selection">
                 <!-- Filled via JS -->

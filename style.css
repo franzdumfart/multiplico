@@ -149,6 +149,16 @@ h1 {
     color: #ff5252;
 }
 
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--secondary-color);
+    text-decoration: underline;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
 .btn-secondary {
     background-color: #555;
     color: white;
@@ -519,4 +529,61 @@ h1 {
 
 .feedback.wrong {
     color: #f44336;
+}
+
+/* User Selection Styles */
+.user-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 25px;
+}
+
+.user-btn {
+    background-color: #fff;
+    border: 2px solid #eee;
+    padding: 12px 20px;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #eee;
+    min-width: 80px;
+}
+
+.user-btn:hover {
+    border-color: var(--secondary-color);
+    background-color: #f0f7ff;
+}
+
+.user-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #eee;
+}
+
+.add-user-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.add-user-container input {
+    padding: 10px 15px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    width: 150px;
+}
+
+.current-user-info {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #f0f9f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #444;
 }
