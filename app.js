@@ -30,6 +30,7 @@ const questionCounter = document.getElementById('question-counter');
 const feedback = document.getElementById('feedback');
 const numBtns = document.querySelectorAll('.num-btn');
 const btnOk = document.getElementById('btn-ok');
+const btnVoice = document.getElementById('btn-voice');
 
 const resultModal = document.getElementById('result-modal');
 const resultSummary = document.getElementById('result-summary');
@@ -155,6 +156,69 @@ let timerInterval = null;
 let isActive = false;
 let questionPool = [];
 let sessionQuestions = [];
+
+// Voice Recognition Setup
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isListening = false;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'de-DE';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    btnVoice.classList.remove('hidden');
+
+    recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        console.log('Spoken:', speechResult);
+        
+        // Extract numbers from the speech result
+        const numbers = speechResult.match(/\d+/);
+        if (numbers) {
+            answerInput.value = numbers[0];
+            updateOkButtonState();
+            // Automatically check the answer if a number was found
+            checkAnswer();
+        }
+    };
+
+    recognition.onspeechend = () => {
+        stopListening();
+    };
+
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopListening();
+    };
+}
+
+function startListening() {
+    if (!recognition || isListening) return;
+    try {
+        recognition.start();
+        isListening = true;
+        btnVoice.classList.add('listening');
+    } catch (e) {
+        console.error('Recognition start error:', e);
+    }
+}
+
+function stopListening() {
+    if (!recognition || !isListening) return;
+    recognition.stop();
+    isListening = false;
+    btnVoice.classList.remove('listening');
+}
+
+btnVoice.addEventListener('click', () => {
+    if (isListening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+});
 
 // Initialize User Management (moved to initApp)
 
@@ -574,6 +638,7 @@ function nextQuestion() {
 function endSession(aborted = false) {
     isActive = false;
     clearInterval(timerInterval);
+    stopListening();
     
     if (!aborted && (currentPoints !== 0 || questionsAnswered > 0)) {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
