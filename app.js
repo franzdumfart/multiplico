@@ -153,6 +153,7 @@ let startTime = 0;
 let timerInterval = null;
 let isActive = false;
 let questionPool = [];
+let sessionQuestions = [];
 
 // Initialize User Management (moved to initApp)
 
@@ -449,6 +450,7 @@ function startPractice() {
     questionsAnswered = 0;
     correctCount = 0;
     wrongCount = 0;
+    sessionQuestions = [];
     isActive = true;
     updateScoreDisplay();
     
@@ -583,7 +585,8 @@ function endSession(aborted = false) {
             mode: currentGameMode,
             time: timeStr,
             correct: correctCount,
-            wrong: wrongCount
+            wrong: wrongCount,
+            questions: sessionQuestions
         });
 
         showResults(currentPoints, questionsAnswered, timeStr);
@@ -634,8 +637,17 @@ async function checkAnswer() {
     if (isNaN(userAnswer)) return;
 
     questionsAnswered++;
+    const isCorrect = (userAnswer === currentQuestion.answer);
+    
+    // Log question for history
+    sessionQuestions.push({
+        q: `${currentQuestion.a} × ${currentQuestion.b}`,
+        a: currentQuestion.answer,
+        user: userAnswer,
+        correct: isCorrect
+    });
 
-    if (userAnswer === currentQuestion.answer) {
+    if (isCorrect) {
         currentPoints += 10;
         correctCount++;
         showFeedback('Richtig! +10', 'correct');
@@ -796,29 +808,50 @@ function renderHistory() {
     let totalCorrect = 0;
     let totalWrong = 0;
 
-    // We use all recorded scores for stats
-    sessionScores.forEach(s => {
+    // We use all recorded scores for stats (reverse order to show newest first)
+    [...sessionScores].reverse().forEach((s, index) => {
         totalCorrect += (s.correct || 0);
         totalWrong += (s.wrong || 0);
         totalPlayed += ((s.correct || 0) + (s.wrong || 0));
         
         const li = document.createElement('li');
-        li.className = 'score-item';
+        li.className = 'score-item-history';
         
         let modeName = 'Endlos';
         if (s.mode === 'timed') modeName = '5 Min';
         if (s.mode === 'count') modeName = '10 Frag';
         if (s.mode === 'mistakes') modeName = 'Fehler';
 
+        let questionsHtml = '';
+        if (s.questions && s.questions.length > 0) {
+            questionsHtml = `
+                <div class="history-details hidden" id="history-details-${index}">
+                    <div class="details-grid">
+                        ${s.questions.map(q => `
+                            <div class="detail-q ${q.correct ? 'q-right' : 'q-wrong'}">
+                                ${q.q} = ${q.user} ${q.correct ? '✓' : `(✗ ${q.a})`}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
         li.innerHTML = `
-            <div style="flex: 1;">
-                <strong>${s.date}</strong> (${modeName})<br>
-                <small>${s.series}</small>
+            <div class="history-main" onclick="toggleHistoryDetails(${index})">
+                <div style="flex: 1;">
+                    <strong>${s.date}</strong> (${modeName})<br>
+                    <small>${s.series}</small>
+                </div>
+                <div style="text-align: right; display: flex; align-items: center; gap: 10px;">
+                    <div style="text-align: right;">
+                        <strong>${s.points} Pkt</strong><br>
+                        <small>${s.correct || 0} ✓ / ${s.wrong || 0} ✗</small>
+                    </div>
+                    ${s.questions ? '<span class="expand-icon">▼</span>' : ''}
+                </div>
             </div>
-            <div style="text-align: right;">
-                <strong>${s.points} Pkt</strong><br>
-                <small>${s.correct || 0} ✓ / ${s.wrong || 0} ✗</small>
-            </div>
+            ${questionsHtml}
         `;
         historyList.appendChild(li);
     });
@@ -829,6 +862,17 @@ function renderHistory() {
 
     if (sessionScores.length === 0) {
         historyList.innerHTML = '<li class="score-empty">Noch kein Quiz-Verlauf vorhanden. Spiel eine Runde!</li>';
+    }
+}
+
+function toggleHistoryDetails(index) {
+    const details = document.getElementById(`history-details-${index}`);
+    if (details) {
+        details.classList.toggle('hidden');
+        const icon = details.previousElementSibling.querySelector('.expand-icon');
+        if (icon) {
+            icon.style.transform = details.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
     }
 }
 
