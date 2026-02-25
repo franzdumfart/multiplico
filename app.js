@@ -235,6 +235,11 @@ async function startListening() {
     // Always try to get mic permission first to trigger the browser popup
     try {
         console.log("Requesting microphone permission...");
+        
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("MediaDevices API ist in diesem Browser oder Kontext (z.B. kein HTTPS) nicht verfügbar.");
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         // Permission granted, stop the stream immediately as we only needed it to trigger the prompt
         stream.getTracks().forEach(track => track.stop());
