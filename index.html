@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>multiplico - 1x1 üben</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --bg-color: #f5f7fa;
+            --text-color: #333;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 24px;
+            color: var(--primary-color);
+            font-weight: 800;
+        }
+
+        .logo {
+            max-width: 150px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .grid-selection {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .checkbox-item {
+            position: relative;
+        }
+
+        .checkbox-item input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            background-color: #eee;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .checkbox-item input:checked ~ .checkbox-label {
+            background-color: var(--secondary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .btn-start {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-start:active {
+            transform: scale(0.98);
+        }
+
+        .score-board {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .score-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f9f9f9;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="Images/logo.png" alt="multiplico Logo" class="logo">
+        <h1>multiplico</h1>
+        
+        <div id="setup-screen">
+            <div class="section-title">Welche Reihen möchtest du üben?</div>
+            <div class="grid-selection" id="series-selection">
+                <!-- Filled via JS -->
+            </div>
+            
+            <button class="btn-start" id="btn-start">Jetzt üben</button>
+        </div>
+
+        <div id="score-board" class="score-board hidden">
+            <div class="section-title">Deine Punkte</div>
+            <ul id="score-list" class="score-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const seriesContainer = document.getElementById('series-selection');
+        const btnStart = document.getElementById('btn-start');
+        const scoreBoard = document.getElementById('score-board');
+        const scoreList = document.getElementById('score-list');
+        
+        let sessionScores = [];
+
+        // Initialize multiplication series 0 to 10
+        for (let i = 0; i <= 10; i++) {
+            const item = document.createElement('div');
+            item.className = 'checkbox-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = 'series-' + i;
+            checkbox.value = i;
+            checkbox.checked = true; // All enabled by default
+            
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            label.htmlFor = 'series-' + i;
+            label.textContent = i;
+            
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            seriesContainer.appendChild(item);
+        }
+
+        btnStart.addEventListener('click', () => {
+            const selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))
+                .map(cb => parseInt(cb.value));
+            
+            if (selectedSeries.length === 0) {
+                alert('Please select at least one series!');
+                return;
+            }
+
+            // The practice session would start here.
+            // For now, we simulate a result and save it,
+            // as the actual practice UI hasn't been specified yet.
+            
+            // Mock result for this run
+            const mockScore = {
+                date: new Date().toLocaleTimeString(),
+                points: Math.floor(Math.random() * 10) + 1,
+                total: 10
+            };
+            
+            saveScore(mockScore);
+        });
+
+        function saveScore(score) {
+            sessionScores.push(score);
+            updateScoreBoard();
+        }
+
+        function updateScoreBoard() {
+            scoreBoard.classList.remove('hidden');
+            scoreList.innerHTML = '';
+            
+            // Show latest runs (newest first)
+            [...sessionScores].reverse().forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'score-item';
+                li.innerHTML = `<span>${s.date}</span> <strong>${s.points} / ${s.total} Points</strong>`;
+                scoreList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
