@@ -514,7 +514,8 @@ h1 {
     padding: 6px 10px;
     border-radius: 8px;
     font-size: 0.8rem;
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
 }
 
 .q-right {

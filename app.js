@@ -819,7 +819,7 @@ function renderHistory() {
         
         let modeName = 'Endlos';
         if (s.mode === 'timed') modeName = '5 Min';
-        if (s.mode === 'count') modeName = '10 Frag';
+        if (s.mode === 'count') modeName = '10 Fragen';
         if (s.mode === 'mistakes') modeName = 'Fehler';
 
         let questionsHtml = '';
@@ -829,7 +829,8 @@ function renderHistory() {
                     <div class="details-grid">
                         ${s.questions.map(q => `
                             <div class="detail-q ${q.correct ? 'q-right' : 'q-wrong'}">
-                                ${q.q} = ${q.user} ${q.correct ? '✓' : `(✗ ${q.a})`}
+                                <span>${q.q} = ${q.user}</span>
+                                <span>${q.correct ? '✓' : `✗ (${q.a})`}</span>
                             </div>
                         `).join('')}
                     </div>
