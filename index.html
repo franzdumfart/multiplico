@@ -126,7 +126,7 @@
         const resultSummary = document.getElementById('result-summary');
         const btnModalClose = document.getElementById('btn-modal-close');
         
-        let sessionScores = [];
+        let sessionScores = JSON.parse(localStorage.getItem('multiplico_scores')) || [];
         let currentPoints = 0;
         let selectedSeries = [];
         let currentQuestion = { a: 0, b: 0, answer: 0 };
@@ -155,6 +155,11 @@
             item.appendChild(checkbox);
             item.appendChild(label);
             seriesContainer.appendChild(item);
+        }
+
+        // Load existing scores into scoreboard
+        if (sessionScores.length > 0) {
+            updateScoreBoard();
         }
 
         btnStart.addEventListener('click', () => {
@@ -349,6 +354,7 @@
 
         function saveScore(score) {
             sessionScores.push(score);
+            localStorage.setItem('multiplico_scores', JSON.stringify(sessionScores));
             updateScoreBoard();
         }
 
