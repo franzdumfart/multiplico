@@ -49,6 +49,7 @@
             </div>
             
             <button class="btn-start" id="btn-start">Jetzt üben</button>
+            <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
         </div>
 
         <div id="practice-screen" class="hidden">
@@ -112,6 +113,7 @@
         const practiceScreen = document.getElementById('practice-screen');
         const seriesContainer = document.getElementById('series-selection');
         const btnStart = document.getElementById('btn-start');
+        const btnReset = document.getElementById('btn-reset');
         const btnAbort = document.getElementById('btn-abort');
         const scoreBoard = document.getElementById('score-board');
         const scoreListTimed = document.getElementById('score-list-timed');
@@ -179,6 +181,17 @@
         // Initialize score board
         updateScoreBoard();
         updateMistakesCount();
+
+        btnReset.addEventListener('click', () => {
+            if (confirm('Möchtest du wirklich alle deine Punkte und Fehler löschen? Dies kann nicht rückgängig gemacht werden.')) {
+                localStorage.removeItem('multiplico_scores');
+                localStorage.removeItem('multiplico_mistakes');
+                sessionScores = [];
+                mistakes = [];
+                updateScoreBoard();
+                updateMistakesCount();
+            }
+        });
 
         btnStart.addEventListener('click', () => {
             selectedSeries = Array.from(seriesContainer.querySelectorAll('input:checked'))

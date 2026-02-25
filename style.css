@@ -105,6 +105,21 @@ h1 {
     transform: scale(0.98);
 }
 
+.btn-reset {
+    background: none;
+    border: none;
+    color: #999;
+    text-decoration: underline;
+    font-size: 0.85rem;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-reset:hover {
+    color: #ff5252;
+}
+
 .score-board {
     margin-top: 30px;
     padding-top: 20px;
