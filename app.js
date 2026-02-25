@@ -170,17 +170,16 @@ function initSpeechRecognition() {
     recognition.lang = 'de-DE';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    recognition.continuous = true; // Stay active for multiple questions
+    recognition.continuous = false; // Disable continuous to avoid issues in some browsers
+    recognition.interimResults = true; // Use interim results for faster feedback
 
     recognition.onresult = (event) => {
         let speechResult = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                speechResult += event.results[i][0].transcript;
-            }
+            speechResult += event.results[i][0].transcript;
         }
         
-        console.log('Voice result (final):', speechResult);
+        console.log('Voice result:', speechResult);
         if (!speechResult) return;
         
         // Convert German number words to digits
@@ -192,7 +191,11 @@ function initSpeechRecognition() {
             console.log('Number detected:', numbers[0]);
             answerInput.value = numbers[0];
             updateOkButtonState();
-            checkAnswer();
+            
+            // Only check if it's a final result to avoid double submission
+            if (event.results[event.results.length - 1].isFinal) {
+                checkAnswer();
+            }
         }
     };
 
@@ -200,10 +203,13 @@ function initSpeechRecognition() {
         console.log('Voice recognition started');
         isListening = true;
         btnVoice.classList.add('listening');
+        // Clear previous interim results when starting a fresh recognition cycle
+        answerInput.placeholder = "Spreche jetzt...";
     };
 
     recognition.onend = () => {
         console.log('Voice recognition ended');
+        answerInput.placeholder = "?";
         if (isListening && isActive) {
             try {
                 recognition.start();
@@ -285,32 +291,41 @@ async function startListening() {
         return;
     }
 
-    // Always try to get mic permission first to trigger the browser popup
     try {
         console.log("Requesting microphone permission...");
         
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error("MediaDevices API ist in diesem Browser oder Kontext (z.B. kein HTTPS) nicht verfügbar.");
-        }
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Permission granted, stop the stream immediately as we only needed it to trigger the prompt
-        stream.getTracks().forEach(track => track.stop());
+        // Try to initialize recognition first
+        initSpeechRecognition();
         
-        // Now initialize and start recognition
-        if (initSpeechRecognition()) {
-            isListening = true;
-            recognition.start();
-        }
+        isListening = true;
+        recognition.start();
+        console.log("Recognition.start() called successfully");
     } catch (e) {
-        console.error("Microphone access error:", e);
-        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
-            alert("Mikrofon-Zugriff wurde verweigert. Ohne Mikrofon kannst du die Spracheingabe nicht nutzen.");
+        console.error("Speech recognition start error:", e);
+        
+        // If it failed, maybe we need explicit permission first (especially in Brave)
+        if (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.message.includes('permission')) {
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Try again after getting permission
+                    recognition.start();
+                } else {
+                    throw e;
+                }
+            } catch (innerError) {
+                console.error("Secondary mic access error:", innerError);
+                alert("Mikrofon-Zugriff wurde verweigert. Bitte erlaube den Zugriff in deinen Browser-Einstellungen.");
+                isListening = false;
+                btnVoice.classList.remove("listening");
+            }
         } else {
-            alert("Fehler beim Zugriff auf das Mikrofon: " + e.message);
+            alert("Fehler beim Starten der Spracherkennung: " + e.message);
+            isListening = false;
+            btnVoice.classList.remove("listening");
         }
-        isListening = false;
-        btnVoice.classList.remove("listening");
     }
 }
 
