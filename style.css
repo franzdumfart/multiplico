@@ -121,7 +121,7 @@ h1 {
 }
 
 .btn-secondary {
-    background-color: var(--secondary-color);
+    background-color: #555;
     color: white;
     border: none;
     padding: 12px 20px;
@@ -132,7 +132,11 @@ h1 {
     width: 100%;
     margin-top: 15px;
     transition: transform 0.1s, background-color 0.2s;
-    box-shadow: 0 4px 10px rgba(33, 150, 243, 0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+    background-color: #444;
 }
 
 .btn-secondary:active {
