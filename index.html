@@ -176,10 +176,8 @@
             seriesContainer.appendChild(item);
         }
 
-        // Load existing scores into scoreboard
-        if (sessionScores.length > 0) {
-            updateScoreBoard();
-        }
+        // Initialize score board
+        updateScoreBoard();
         updateMistakesCount();
 
         btnStart.addEventListener('click', () => {
@@ -303,8 +301,6 @@
             currentQuestion = { a, b, answer: a * b };
             questionText.textContent = `${a} × ${b} =`;
             answerInput.value = '';
-            feedback.textContent = '';
-            feedback.className = 'feedback';
             
             if (currentGameMode === 'count') {
                 questionCounter.textContent = `Frage ${questionsAnswered + 1} von 10`;
@@ -389,16 +385,16 @@
                     removeMistake(currentQuestion.a, currentQuestion.b);
                 }
                 
-                setTimeout(nextQuestion, 600);
+                nextQuestion();
             } else {
                 currentPoints = Math.max(-500, currentPoints - 10);
-                showFeedback(`Falsch! Es wäre ${currentQuestion.answer} gewesen.`, 'wrong');
+                showFeedback(`Falsch! ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
                 
                 if (currentGameMode !== 'mistakes') {
                     addMistake(currentQuestion.a, currentQuestion.b);
                 }
                 
-                setTimeout(nextQuestion, 1500);
+                nextQuestion();
             }
             updateScoreDisplay();
         }
