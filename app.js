@@ -577,8 +577,11 @@ function nextQuestion() {
 function endSession(aborted = false) {
     isActive = false;
     clearInterval(timerInterval);
-    
-    if (!aborted && (currentPoints !== 0 || questionsAnswered > 0)) {
+
+    const hasProgress = (currentPoints !== 0 || questionsAnswered > 0);
+    const shouldSaveScore = hasProgress && (!aborted || currentGameMode === 'endless');
+
+    if (shouldSaveScore) {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         const timeStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
         
@@ -593,7 +596,11 @@ function endSession(aborted = false) {
             questions: sessionQuestions
         });
 
-        showResults(currentPoints, questionsAnswered, timeStr);
+        if (aborted) {
+            showSetup();
+        } else {
+            showResults(currentPoints, questionsAnswered, timeStr);
+        }
     } else {
         showSetup();
     }
