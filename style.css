@@ -35,7 +35,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background: linear-gradient(135deg, #1976d2, #42a5f5);
-    padding: 12px 20px;
+    padding: 14px 22px;
     border-radius: 16px;
     color: white;
     margin-bottom: 25px;
@@ -51,7 +51,7 @@ body {
 
 .user-greeting span {
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1.18rem;
 }
 
 .user-actions {
@@ -105,7 +105,7 @@ body {
 }
 
 .total-points-mini .total-points-value {
-    font-size: 1.8rem;
+    font-size: 1.95rem;
     font-weight: 900;
     line-height: 1;
 }
