@@ -882,6 +882,16 @@ h1 {
 }
 
 @media (max-width: 768px) {
+    body.mobile-no-scroll {
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: manipulation;
+    }
+
+    .setup-actions {
+        flex-direction: column;
+    }
+
     #practice-screen {
         padding-bottom: 130px;
     }

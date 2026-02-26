@@ -65,6 +65,11 @@ if (useCustomNumpadOnly) {
     answerInput.tabIndex = -1;
 }
 
+function setMobileScrollLock(locked) {
+    if (!useCustomNumpadOnly) return;
+    document.body.classList.toggle('mobile-no-scroll', locked);
+}
+
 async function initApp() {
     await storage.init();
     
@@ -171,6 +176,7 @@ let sessionQuestions = [];
 // Initialize User Management (moved to initApp)
 
 function renderUserSelection() {
+    setMobileScrollLock(false);
     userSelectionScreen.classList.remove('hidden');
     setupScreen.classList.add('hidden');
     practiceScreen.classList.add('hidden');
@@ -256,6 +262,7 @@ async function loadUserData(userName) {
 }
 
 function showSetupScreen() {
+    setMobileScrollLock(false);
     userSelectionScreen.classList.add('hidden');
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
@@ -481,6 +488,7 @@ function updateOkButtonState() {
 }
 
 function showSetup() {
+    setMobileScrollLock(false);
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
     setRankingsVisibility(false);
@@ -503,6 +511,7 @@ function focusAnswerInput() {
 }
 
 function startPractice() {
+    setMobileScrollLock(true);
     currentPoints = 0;
     questionsAnswered = 0;
     correctCount = 0;
