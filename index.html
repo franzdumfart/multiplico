@@ -81,10 +81,12 @@
             <div class="setup-actions">
                 <button class="btn-secondary" id="btn-show-matrix">Meine Erfolgs-Matrix</button>
                 <button class="btn-secondary" id="btn-show-history">Mein Quiz-Verlauf</button>
+                <button class="btn-secondary" id="btn-toggle-rankings">Rankings</button>
             </div>
             <div class="setup-footer">
                 <button class="btn-reset" id="btn-reset">Stand zurücksetzen</button>
                 <button class="btn-text-small" id="btn-export-csv">Daten exportieren</button>
+                <button class="btn-text-small" id="btn-show-about">Über diese Seite</button>
             </div>
         </div>
 
@@ -119,24 +121,27 @@
         </div>
 
 
-        <div id="score-board" class="score-board">
-            <div class="section-title">Deine Bestleistungen</div>
-            <div class="ranking-tabs">
-                <button class="tab-btn active" data-tab="timed">5 Minuten</button>
-                <button class="tab-btn" data-tab="count">10 Fragen</button>
-                <button class="tab-btn" data-tab="global">Alle Kinder</button>
-            </div>
-            
-            <div class="ranking-content">
-                <div id="ranking-timed" class="ranking-pane active">
-                    <ul id="score-list-timed" class="score-list"></ul>
+        <div id="score-board" class="modal hidden">
+            <div class="modal-content modal-large rankings-modal-content">
+                <h2>Rankings</h2>
+                <div class="ranking-tabs">
+                    <button class="tab-btn active" data-tab="timed">5 Minuten</button>
+                    <button class="tab-btn" data-tab="count">10 Fragen</button>
+                    <button class="tab-btn" data-tab="global">Alle Kinder</button>
                 </div>
-                <div id="ranking-count" class="ranking-pane">
-                    <ul id="score-list-count" class="score-list"></ul>
+                
+                <div class="ranking-content">
+                    <div id="ranking-timed" class="ranking-pane active">
+                        <ul id="score-list-timed" class="score-list"></ul>
+                    </div>
+                    <div id="ranking-count" class="ranking-pane">
+                        <ul id="score-list-count" class="score-list"></ul>
+                    </div>
+                    <div id="ranking-global" class="ranking-pane">
+                        <ul id="score-list-global" class="score-list"></ul>
+                    </div>
                 </div>
-                <div id="ranking-global" class="ranking-pane">
-                    <ul id="score-list-global" class="score-list"></ul>
-                </div>
+                <button id="btn-rankings-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
             </div>
         </div>
 
@@ -189,6 +194,21 @@
                     </ul>
                 </div>
                 <button id="btn-history-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
+            </div>
+        </div>
+
+        <!-- About Modal -->
+        <div id="about-modal" class="modal modal-bottom hidden">
+            <div class="modal-content modal-content-bottom">
+                <h2>Über diese Seite</h2>
+                <p>
+                    Ich bin Papa und habe diese Seite für meine Kinder gebaut. Ich hoffe,
+                    dass auch andere Kinder so spielerisch die Malreihen üben können.
+                </p>
+                <p>
+                    Entstanden ist das Ganze mit Unterstützung von KI.
+                </p>
+                <button id="btn-about-close" class="btn-text-small">Schließen</button>
             </div>
         </div>
     </div>

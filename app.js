@@ -13,9 +13,12 @@ const btnStart = document.getElementById('btn-start');
 const btnReset = document.getElementById('btn-reset');
 const btnShowMatrix = document.getElementById('btn-show-matrix');
 const btnShowHistory = document.getElementById('btn-show-history');
+const btnToggleRankings = document.getElementById('btn-toggle-rankings');
 const btnExportCSV = document.getElementById('btn-export-csv');
+const btnShowAbout = document.getElementById('btn-show-about');
 const btnAbort = document.getElementById('btn-abort');
 const scoreBoard = document.getElementById('score-board');
+const btnRankingsClose = document.getElementById('btn-rankings-close');
 const scoreListTimed = document.getElementById('score-list-timed');
 const scoreListCount = document.getElementById('score-list-count');
 const scoreListGlobal = document.getElementById('score-list-global');
@@ -45,6 +48,8 @@ const historyList = document.getElementById('history-list');
 const statTotalPlayed = document.getElementById('stat-total-played');
 const statTotalCorrect = document.getElementById('stat-total-correct');
 const statTotalWrong = document.getElementById('stat-total-wrong');
+const aboutModal = document.getElementById('about-modal');
+const btnAboutClose = document.getElementById('btn-about-close');
 
 const headerUserInfo = document.getElementById('header-user-info');
 const totalPointsDisplay = document.getElementById('total-points-display');
@@ -247,7 +252,7 @@ function showSetupScreen() {
     userSelectionScreen.classList.add('hidden');
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
-    scoreBoard.classList.remove('hidden');
+    setRankingsVisibility(false);
     headerUserInfo.classList.remove('hidden');
 }
 
@@ -390,12 +395,40 @@ btnShowHistory.addEventListener('click', () => {
     historyModal.classList.remove('hidden');
 });
 
+btnToggleRankings.addEventListener('click', () => {
+    setRankingsVisibility(true);
+});
+
+btnRankingsClose.addEventListener('click', () => {
+    setRankingsVisibility(false);
+});
+
 btnMatrixClose.addEventListener('click', () => {
     matrixModal.classList.add('hidden');
 });
 
 btnHistoryClose.addEventListener('click', () => {
     historyModal.classList.add('hidden');
+});
+
+btnShowAbout.addEventListener('click', () => {
+    aboutModal.classList.remove('hidden');
+});
+
+btnAboutClose.addEventListener('click', () => {
+    aboutModal.classList.add('hidden');
+});
+
+aboutModal.addEventListener('click', (e) => {
+    if (e.target === aboutModal) {
+        aboutModal.classList.add('hidden');
+    }
+});
+
+scoreBoard.addEventListener('click', (e) => {
+    if (e.target === scoreBoard) {
+        setRankingsVisibility(false);
+    }
 });
 
 btnExportCSV.addEventListener('click', () => {
@@ -443,9 +476,16 @@ function updateOkButtonState() {
 function showSetup() {
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
-    scoreBoard.classList.remove('hidden');
+    setRankingsVisibility(false);
     if (currentUser) {
         headerUserInfo.classList.remove('hidden');
+    }
+}
+
+function setRankingsVisibility(visible) {
+    scoreBoard.classList.toggle('hidden', !visible);
+    if (visible) {
+        updateScoreBoard();
     }
 }
 

@@ -470,6 +470,46 @@ h1 {
     margin-bottom: 20px;
 }
 
+.modal-bottom {
+    align-items: flex-end;
+    background-color: rgba(0, 0, 0, 0.45);
+}
+
+.modal-content-bottom {
+    width: min(560px, 100%);
+    max-width: 560px;
+    margin: 0 0 16px 0;
+    border-radius: 18px 18px 0 0;
+    padding: 22px 24px 18px;
+    text-align: left;
+    animation: slideUpFade 0.2s ease-out;
+}
+
+.modal-content-bottom h2 {
+    margin: 0 0 12px;
+}
+
+.modal-content-bottom p {
+    margin: 0 0 10px;
+    line-height: 1.5;
+    color: #555;
+}
+
+.modal-content-bottom #btn-about-close {
+    margin-top: 4px;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 #result-summary {
     margin-bottom: 30px;
     line-height: 1.6;
