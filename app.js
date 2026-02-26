@@ -444,6 +444,9 @@ function showSetup() {
     setupScreen.classList.remove('hidden');
     practiceScreen.classList.add('hidden');
     scoreBoard.classList.remove('hidden');
+    if (currentUser) {
+        headerUserInfo.classList.remove('hidden');
+    }
 }
 
 function startPractice() {
