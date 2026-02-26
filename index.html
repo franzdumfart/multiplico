@@ -18,12 +18,13 @@
             <div class="user-greeting">
                 <span id="display-user-name"></span>
                 <div class="user-actions">
+                    <button id="btn-open-avatar" class="btn-text-tiny">Avatar</button>
                     <button id="btn-edit-user" class="btn-text-tiny">Name ändern</button>
                     <button id="btn-switch-user" class="btn-text-tiny">Wechseln</button>
                 </div>
             </div>
             <div class="user-avatar-box">
-                <div id="user-avatar-icon" class="user-avatar-icon">🥚</div>
+                <div id="user-avatar-icon" class="user-avatar-icon"></div>
                 <div id="user-avatar-title" class="user-avatar-title">Starter</div>
                 <div id="user-avatar-progress" class="user-avatar-progress">0 / 250</div>
             </div>
@@ -199,6 +200,19 @@
                     </ul>
                 </div>
                 <button id="btn-history-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
+            </div>
+        </div>
+
+        <!-- Avatar Modal -->
+        <div id="avatar-modal" class="modal hidden">
+            <div class="modal-content modal-large">
+                <h2>Avatar wählen</h2>
+                <div id="avatar-options" class="avatar-options-grid"></div>
+                <div class="avatar-stage-preview-wrap">
+                    <h3 id="avatar-stage-preview-title">Evolution</h3>
+                    <div id="avatar-stage-preview" class="avatar-stage-preview-grid"></div>
+                </div>
+                <button id="btn-avatar-close" class="btn-start" style="margin-top: 20px;">Zurück</button>
             </div>
         </div>
 

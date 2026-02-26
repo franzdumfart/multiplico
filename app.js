@@ -6,6 +6,7 @@ const newUserInput = document.getElementById('new-user-name');
 const btnAddUser = document.getElementById('btn-add-user');
 const btnSwitchUser = document.getElementById('btn-switch-user');
 const btnEditUser = document.getElementById('btn-edit-user');
+const btnOpenAvatar = document.getElementById('btn-open-avatar');
 const displayUserName = document.getElementById('display-user-name');
 
 const seriesContainer = document.getElementById('series-selection');
@@ -48,6 +49,11 @@ const historyList = document.getElementById('history-list');
 const statTotalPlayed = document.getElementById('stat-total-played');
 const statTotalCorrect = document.getElementById('stat-total-correct');
 const statTotalWrong = document.getElementById('stat-total-wrong');
+const avatarModal = document.getElementById('avatar-modal');
+const btnAvatarClose = document.getElementById('btn-avatar-close');
+const avatarOptions = document.getElementById('avatar-options');
+const avatarStagePreviewTitle = document.getElementById('avatar-stage-preview-title');
+const avatarStagePreview = document.getElementById('avatar-stage-preview');
 const aboutModal = document.getElementById('about-modal');
 const btnAboutClose = document.getElementById('btn-about-close');
 
@@ -61,13 +67,24 @@ const useCustomNumpadOnly = window.matchMedia('(hover: none) and (pointer: coars
 
 let users = [];
 let currentUser = null;
+let currentAvatarProfile = 'lion';
 const avatarStages = [
-    { minPoints: 0, icon: '🥚', title: 'Starter' },
-    { minPoints: 250, icon: '🐣', title: 'Neuling' },
-    { minPoints: 1000, icon: '🦊', title: 'Schlaukopf' },
-    { minPoints: 3000, icon: '🐯', title: 'Profi' },
-    { minPoints: 6000, icon: '🦁', title: 'Champion' },
-    { minPoints: 10000, icon: '🐲', title: 'Legende' }
+    { minPoints: 0, title: 'Starter' },
+    { minPoints: 250, title: 'Neuling' },
+    { minPoints: 1000, title: 'Schlaukopf' },
+    { minPoints: 3000, title: 'Profi' },
+    { minPoints: 6000, title: 'Champion' },
+    { minPoints: 10000, title: 'Legende' }
+];
+const avatarProfiles = [
+    { id: 'lion', name: 'Loewe' },
+    { id: 'robot', name: 'Roboter' },
+    { id: 'wizard', name: 'Magier' },
+    { id: 'dragon', name: 'Drache' },
+    { id: 'ninja', name: 'Ninja' },
+    { id: 'fox', name: 'Fuchs' },
+    { id: 'astronaut', name: 'Astronaut' },
+    { id: 'pirate', name: 'Pirat' }
 ];
 
 if (useCustomNumpadOnly) {
@@ -79,6 +96,22 @@ if (useCustomNumpadOnly) {
 function setMobileScrollLock(locked) {
     if (!useCustomNumpadOnly) return;
     document.body.classList.toggle('mobile-no-scroll', locked);
+}
+
+function getAvatarProfileKey(userName) {
+    return `multiplico_${userName}_avatar_profile`;
+}
+
+function getAvatarStageIndex(totalPoints) {
+    let stageIndex = 0;
+    for (let i = 0; i < avatarStages.length; i++) {
+        if (totalPoints >= avatarStages[i].minPoints) stageIndex = i;
+    }
+    return stageIndex;
+}
+
+function getAvatarProfileById(profileId) {
+    return avatarProfiles.find(p => p.id === profileId) || avatarProfiles[0];
 }
 
 async function initApp() {
@@ -235,7 +268,7 @@ async function deleteUser(userName) {
 
         // Delete namespaced data
         const prefix = `multiplico_${userName}_`;
-        const keysToDelete = ['scores', 'mistakes', 'solved', 'selected_series'];
+        const keysToDelete = ['scores', 'mistakes', 'solved', 'selected_series', 'avatar_profile'];
         for (const suffix of keysToDelete) {
             await storage.removeItem(prefix + suffix);
         }
@@ -265,6 +298,7 @@ async function loadUserData(userName) {
     mistakes = await storage.getItem(`multiplico_${userName}_mistakes`) || [];
     solvedProblems = await storage.getItem(`multiplico_${userName}_solved`) || {};
     savedSeries = await storage.getItem(`multiplico_${userName}_selected_series`) || null;
+    currentAvatarProfile = await storage.getItem(getAvatarProfileKey(userName)) || avatarProfiles[0].id;
     
     // Refresh UI with user data
     initSeriesCheckboxes();
@@ -319,7 +353,7 @@ btnEditUser.addEventListener('click', async () => {
         const oldPrefix = `multiplico_${currentUser}_`;
         const newPrefix = `multiplico_${trimmedName}_`;
 
-        const keysToMigrate = ['scores', 'mistakes', 'solved', 'selected_series'];
+        const keysToMigrate = ['scores', 'mistakes', 'solved', 'selected_series', 'avatar_profile'];
         for (const suffix of keysToMigrate) {
             const data = await storage.getItem(oldPrefix + suffix);
             if (data) {
@@ -434,6 +468,35 @@ btnMatrixClose.addEventListener('click', () => {
 
 btnHistoryClose.addEventListener('click', () => {
     historyModal.classList.add('hidden');
+});
+
+btnOpenAvatar.addEventListener('click', () => {
+    const totalPoints = sessionScores.reduce((sum, s) => sum + (s.points || 0), 0);
+    renderAvatarOptions(totalPoints);
+    renderAvatarStagePreview();
+    avatarModal.classList.remove('hidden');
+});
+
+btnAvatarClose.addEventListener('click', () => {
+    avatarModal.classList.add('hidden');
+});
+
+avatarModal.addEventListener('click', (e) => {
+    if (e.target === avatarModal) {
+        avatarModal.classList.add('hidden');
+    }
+});
+
+avatarOptions.addEventListener('click', async (e) => {
+    const optionBtn = e.target.closest('.avatar-option-btn');
+    if (!optionBtn || !currentUser) return;
+
+    currentAvatarProfile = optionBtn.dataset.profile;
+    await storage.setItem(getAvatarProfileKey(currentUser), currentAvatarProfile);
+    const totalPoints = sessionScores.reduce((sum, s) => sum + (s.points || 0), 0);
+    updateUserAvatar(totalPoints);
+    renderAvatarOptions(totalPoints);
+    renderAvatarStagePreview();
 });
 
 btnShowAbout.addEventListener('click', () => {
@@ -1033,18 +1096,200 @@ async function updateScoreBoard() {
     }
 }
 
-function updateUserAvatar(totalPoints) {
-    let stageIndex = 0;
-    for (let i = 0; i < avatarStages.length; i++) {
-        if (totalPoints >= avatarStages[i].minPoints) stageIndex = i;
+function renderAvatarOptions(totalPoints) {
+    const stageIndex = getAvatarStageIndex(totalPoints);
+    avatarOptions.innerHTML = '';
+
+    avatarProfiles.forEach(profile => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `avatar-option-btn${profile.id === currentAvatarProfile ? ' active' : ''}`;
+        btn.dataset.profile = profile.id;
+        btn.innerHTML = `
+            <div class="avatar-option-icon">${renderAvatarSvg(profile.id, stageIndex)}</div>
+            <div class="avatar-option-label">${profile.name}</div>
+        `;
+        avatarOptions.appendChild(btn);
+    });
+}
+
+function renderAvatarStagePreview() {
+    avatarStagePreview.innerHTML = '';
+    const profile = getAvatarProfileById(currentAvatarProfile);
+    avatarStagePreviewTitle.textContent = `Evolution: ${profile.name}`;
+
+    avatarStages.forEach((stage, stageIndex) => {
+        const card = document.createElement('div');
+        card.className = 'avatar-stage-card';
+        card.innerHTML = `
+            <div class="avatar-option-icon">${renderAvatarSvg(profile.id, stageIndex)}</div>
+            <div class="avatar-option-label">L${stageIndex + 1}</div>
+        `;
+        avatarStagePreview.appendChild(card);
+    });
+}
+
+function renderAvatarSvg(profileId, stageIndex) {
+    const accents = ['#90a4ae', '#66bb6a', '#42a5f5', '#ab47bc', '#ff7043', '#fbc02d'];
+    const accent = accents[Math.min(stageIndex, accents.length - 1)];
+    const auraOpacity = [0.05, 0.09, 0.14, 0.2, 0.27, 0.35][stageIndex];
+    const powerLevel = stageIndex + 1;
+    const crown = stageIndex >= 5
+        ? "<path d='M33 26l8-10 9 8 9-8 8 10-4 8H37z' fill='#ffd54f' stroke='#f9a825' stroke-width='2'/>"
+        : '';
+    const sparkles = stageIndex >= 3
+        ? "<circle cx='20' cy='28' r='2' fill='#fff'/><circle cx='80' cy='30' r='2' fill='#fff'/>"
+        : '';
+    const badge = "<circle cx='78' cy='78' r='12' fill='#102a43' opacity='0.9'/><text x='78' y='82' font-size='11' text-anchor='middle' fill='#fff' font-family='Arial, sans-serif'>" + powerLevel + "</text>";
+
+    const l2 = stageIndex >= 1;
+    const l3 = stageIndex >= 2;
+    const l4 = stageIndex >= 3;
+    const l5 = stageIndex >= 4;
+    const l6 = stageIndex >= 5;
+    let art = '';
+    switch (profileId) {
+        case 'robot':
+            art = `
+                <rect x='24' y='28' width='52' height='44' rx='10' fill='#b0bec5'/>
+                <rect x='36' y='42' width='10' height='8' rx='3' fill='#263238'/>
+                <rect x='54' y='42' width='10' height='8' rx='3' fill='#263238'/>
+                <rect x='42' y='57' width='16' height='6' rx='3' fill='#455a64'/>
+                <circle cx='50' cy='24' r='4' fill='#90a4ae'/>
+                ${l2 ? "<rect x='22' y='47' width='4' height='10' rx='2' fill='#78909c'/><rect x='74' y='47' width='4' height='10' rx='2' fill='#78909c'/>" : ''}
+                ${l3 ? "<rect x='44' y='30' width='12' height='4' rx='2' fill='#546e7a'/>" : ''}
+                ${l4 ? "<rect x='34' y='64' width='32' height='5' rx='2.5' fill='#455a64'/>" : ''}
+                ${l5 ? "<path d='M18 40l8 4-8 4z' fill='#ff7043'/><path d='M82 40l-8 4 8 4z' fill='#ff7043'/>" : ''}
+                ${l6 ? "<circle cx='50' cy='22' r='3.5' fill='#ffeb3b'/><path d='M50 14l2 4h-4z' fill='#ffeb3b'/>" : ''}
+            `;
+            break;
+        case 'wizard':
+            art = `
+                <circle cx='50' cy='58' r='20' fill='#ffe0b2'/>
+                <path d='M28 42l22-24 22 24z' fill='#5e35b1'/>
+                <rect x='32' y='42' width='36' height='5' fill='#7e57c2'/>
+                <circle cx='42' cy='56' r='3' fill='#3e2723'/>
+                <circle cx='58' cy='56' r='3' fill='#3e2723'/>
+                <path d='M42 66h16' stroke='#3e2723' stroke-width='2.5' stroke-linecap='round'/>
+                ${l2 ? "<circle cx='50' cy='30' r='3' fill='#ffeb3b'/>" : ''}
+                ${l3 ? "<path d='M22 70h56l-4 8H26z' fill='#7e57c2'/>" : ''}
+                ${l4 ? "<rect x='70' y='46' width='3' height='20' fill='#6d4c41'/><circle cx='71.5' cy='43' r='3.5' fill='#ffee58'/>" : ''}
+                ${l5 ? "<path d='M35 23l4-6 4 6z' fill='#ffca28'/><path d='M57 23l4-6 4 6z' fill='#ffca28'/>" : ''}
+                ${l6 ? "<circle cx='50' cy='30' r='7' fill='none' stroke='#fff176' stroke-width='2'/>" : ''}
+            `;
+            break;
+        case 'dragon':
+            art = `
+                <path d='M28 66c0-20 12-30 22-30s22 10 22 30z' fill='#66bb6a'/>
+                <circle cx='43' cy='54' r='3' fill='#1b5e20'/>
+                <circle cx='57' cy='54' r='3' fill='#1b5e20'/>
+                <path d='M44 63h12' stroke='#1b5e20' stroke-width='2.5' stroke-linecap='round'/>
+                <path d='M34 38l6-10 6 8' fill='#81c784'/>
+                <path d='M54 36l8-10 6 12' fill='#81c784'/>
+                ${l2 ? "<path d='M30 66l-8 6h10z' fill='#43a047'/><path d='M70 66l8 6H68z' fill='#43a047'/>" : ''}
+                ${l3 ? "<path d='M44 42h12l-2 6h-8z' fill='#aed581'/>" : ''}
+                ${l4 ? "<path d='M50 64l3 6h-6z' fill='#ffa000'/>" : ''}
+                ${l5 ? "<path d='M50 58l16 4-16 4z' fill='#ff7043' opacity='0.85'/>" : ''}
+                ${l6 ? "<path d='M24 50h52' stroke='#fff176' stroke-width='2' stroke-dasharray='3 2'/>" : ''}
+            `;
+            break;
+        case 'ninja':
+            art = `
+                <circle cx='50' cy='56' r='22' fill='#37474f'/>
+                <rect x='30' y='46' width='40' height='12' rx='6' fill='#eceff1'/>
+                <circle cx='43' cy='52' r='3' fill='#263238'/>
+                <circle cx='57' cy='52' r='3' fill='#263238'/>
+                <path d='M34 64h32' stroke='#263238' stroke-width='2.5' stroke-linecap='round'/>
+                <rect x='26' y='34' width='48' height='8' rx='4' fill='#263238'/>
+                ${l2 ? "<path d='M25 70l8-6v10z' fill='#607d8b'/><path d='M75 70l-8-6v10z' fill='#607d8b'/>" : ''}
+                ${l3 ? "<rect x='46' y='28' width='8' height='6' rx='2' fill='#90a4ae'/>" : ''}
+                ${l4 ? "<path d='M32 40l-8 8' stroke='#90caf9' stroke-width='2'/><path d='M68 40l8 8' stroke='#90caf9' stroke-width='2'/>" : ''}
+                ${l5 ? "<rect x='40' y='66' width='20' height='4' rx='2' fill='#263238'/>" : ''}
+                ${l6 ? "<circle cx='50' cy='52' r='18' fill='none' stroke='#80deea' stroke-width='2'/>" : ''}
+            `;
+            break;
+        case 'fox':
+            art = `
+                <circle cx='50' cy='58' r='21' fill='#ffb74d'/>
+                <path d='M34 40l-5-14 14 7z' fill='#ff9800'/>
+                <path d='M66 40l5-14-14 7z' fill='#ff9800'/>
+                <circle cx='43' cy='56' r='3' fill='#3e2723'/>
+                <circle cx='57' cy='56' r='3' fill='#3e2723'/>
+                <path d='M46 64l4 3 4-3' fill='#fff3e0'/>
+                ${l2 ? "<path d='M30 66l-6 8 10-3z' fill='#ff9800'/><path d='M70 66l6 8-10-3z' fill='#ff9800'/>" : ''}
+                ${l3 ? "<path d='M50 68l6 4-6 4-6-4z' fill='#fff8e1'/>" : ''}
+                ${l4 ? "<path d='M38 46h24' stroke='#ffe082' stroke-width='2'/>" : ''}
+                ${l5 ? "<circle cx='32' cy='50' r='2.5' fill='#fff176'/><circle cx='68' cy='50' r='2.5' fill='#fff176'/>" : ''}
+                ${l6 ? "<path d='M28 36l6-10 6 10' fill='#ffd54f'/><path d='M72 36l-6-10-6 10' fill='#ffd54f'/>" : ''}
+            `;
+            break;
+        case 'astronaut':
+            art = `
+                <circle cx='50' cy='56' r='24' fill='#cfd8dc'/>
+                <circle cx='50' cy='54' r='15' fill='#bbdefb'/>
+                <circle cx='45' cy='53' r='2.5' fill='#263238'/>
+                <circle cx='55' cy='53' r='2.5' fill='#263238'/>
+                <rect x='42' y='65' width='16' height='5' rx='2.5' fill='#90a4ae'/>
+                <rect x='36' y='30' width='28' height='6' rx='3' fill='#eceff1'/>
+                ${l2 ? "<rect x='22' y='50' width='8' height='5' rx='2' fill='#90a4ae'/><rect x='70' y='50' width='8' height='5' rx='2' fill='#90a4ae'/>" : ''}
+                ${l3 ? "<circle cx='50' cy='54' r='18' fill='none' stroke='#90caf9' stroke-width='2'/>" : ''}
+                ${l4 ? "<path d='M50 22l4 8h-8z' fill='#26c6da'/>" : ''}
+                ${l5 ? "<path d='M30 72h40' stroke='#26a69a' stroke-width='3'/>" : ''}
+                ${l6 ? "<circle cx='50' cy='54' r='22' fill='none' stroke='#80deea' stroke-width='2' stroke-dasharray='4 2'/>" : ''}
+            `;
+            break;
+        case 'pirate':
+            art = `
+                <circle cx='50' cy='58' r='21' fill='#ffcc80'/>
+                <path d='M30 46h40v-8c-6-5-12-7-20-7s-14 2-20 7z' fill='#212121'/>
+                <rect x='30' y='46' width='40' height='6' fill='#f44336'/>
+                <circle cx='44' cy='58' r='3' fill='#3e2723'/>
+                <path d='M52 58h8' stroke='#3e2723' stroke-width='2.5' stroke-linecap='round'/>
+                <path d='M44 66h12' stroke='#3e2723' stroke-width='2.5' stroke-linecap='round'/>
+                ${l2 ? "<circle cx='56' cy='58' r='4' fill='none' stroke='#212121' stroke-width='2'/>" : ''}
+                ${l3 ? "<path d='M72 56l8 0-6 4z' fill='#424242'/>" : ''}
+                ${l4 ? "<rect x='28' y='40' width='44' height='4' fill='#b71c1c'/>" : ''}
+                ${l5 ? "<path d='M26 62l6-3v6z' fill='#616161'/>" : ''}
+                ${l6 ? "<path d='M50 24l4 7h-8z' fill='#ffd54f'/>" : ''}
+            `;
+            break;
+        default:
+            art = `
+                <circle cx='50' cy='58' r='20' fill='#ffcc80'/>
+                <circle cx='35' cy='44' r='9' fill='#f4a261'/>
+                <circle cx='65' cy='44' r='9' fill='#f4a261'/>
+                <circle cx='43' cy='57' r='3' fill='#5d4037'/>
+                <circle cx='57' cy='57' r='3' fill='#5d4037'/>
+                <path d='M44 66h12' stroke='#5d4037' stroke-width='2.5' stroke-linecap='round'/>
+                ${l2 ? "<path d='M30 58h6' stroke='#f57c00' stroke-width='2'/>" : ''}
+                ${l3 ? "<path d='M64 58h6' stroke='#f57c00' stroke-width='2'/>" : ''}
+                ${l4 ? "<rect x='44' y='68' width='12' height='3' fill='#ffca28'/>" : ''}
+                ${l5 ? "<circle cx='50' cy='50' r='18' fill='none' stroke='#ffe082' stroke-width='2'/>" : ''}
+                ${l6 ? "<path d='M50 26l4 6h-8z' fill='#ffd54f'/>" : ''}
+            `;
+            break;
     }
+
+    return `<svg viewBox="0 0 100 100" role="img" aria-label="avatar">
+        <circle cx="50" cy="50" r="46" fill="${accent}" opacity="${auraOpacity}"></circle>
+        <circle cx="50" cy="50" r="40" fill="#ffffff" opacity="0.95"></circle>
+        ${sparkles}
+        ${crown}
+        ${art}
+        ${badge}
+    </svg>`;
+}
+
+function updateUserAvatar(totalPoints) {
+    const stageIndex = getAvatarStageIndex(totalPoints);
     const stage = avatarStages[stageIndex];
     const nextStage = avatarStages[stageIndex + 1];
     const level = stageIndex + 1;
+    const profile = getAvatarProfileById(currentAvatarProfile);
 
-    userAvatarIcon.textContent = stage.icon;
+    userAvatarIcon.innerHTML = renderAvatarSvg(profile.id, stageIndex);
     userAvatarTitle.textContent = `Level ${level} · ${stage.title}`;
     userAvatarProgress.textContent = nextStage
-        ? `${totalPoints.toLocaleString('de-DE')} / ${nextStage.minPoints.toLocaleString('de-DE')}`
-        : 'MAX';
+        ? `${profile.name} · ${totalPoints.toLocaleString('de-DE')} / ${nextStage.minPoints.toLocaleString('de-DE')}`
+        : `${profile.name} · MAX`;
 }

@@ -72,8 +72,15 @@ body {
 }
 
 .user-avatar-icon {
-    font-size: 1.6rem;
-    line-height: 1;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto;
+}
+
+.user-avatar-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .user-avatar-title {
@@ -89,6 +96,97 @@ body {
     margin-top: 2px;
     font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.82);
+}
+
+.avatar-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.avatar-option-btn {
+    border: 2px solid #e7edf6;
+    border-radius: 14px;
+    background: #f8fbff;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.avatar-option-btn:hover {
+    border-color: #90caf9;
+    transform: translateY(-1px);
+}
+
+.avatar-option-btn.active {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    box-shadow: 0 6px 16px rgba(25, 118, 210, 0.15);
+}
+
+.avatar-option-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 8px;
+}
+
+.avatar-option-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.avatar-option-label {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #345;
+}
+
+.avatar-stage-preview-wrap {
+    position: sticky;
+    bottom: 0;
+    margin-top: 18px;
+    padding-top: 10px;
+    background: linear-gradient(to top, #fff 78%, rgba(255, 255, 255, 0.75) 100%);
+    border-top: 1px solid #e5edf7;
+    text-align: left;
+    z-index: 3;
+}
+
+.avatar-stage-preview-wrap h3 {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+    color: #456;
+}
+
+.avatar-stage-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(74px, 1fr));
+    gap: 8px;
+}
+
+.avatar-stage-card {
+    border: 1px solid #d9e4f1;
+    border-radius: 12px;
+    background: #f7fbff;
+    padding: 8px;
+    text-align: center;
+}
+
+.avatar-stage-card .avatar-option-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 4px;
+}
+
+.avatar-stage-card .avatar-option-label {
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .avatar-stage-preview-grid {
+        grid-template-columns: repeat(3, minmax(74px, 1fr));
+    }
 }
 
 .total-points-mini {
