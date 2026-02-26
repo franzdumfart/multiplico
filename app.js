@@ -54,9 +54,16 @@ const btnAboutClose = document.getElementById('btn-about-close');
 const headerUserInfo = document.getElementById('header-user-info');
 const totalPointsDisplay = document.getElementById('total-points-display');
 const totalPointsValue = document.getElementById('total-points-value');
+const useCustomNumpadOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 let users = [];
 let currentUser = null;
+
+if (useCustomNumpadOnly) {
+    answerInput.readOnly = true;
+    answerInput.setAttribute('inputmode', 'none');
+    answerInput.tabIndex = -1;
+}
 
 async function initApp() {
     await storage.init();
@@ -489,6 +496,12 @@ function setRankingsVisibility(visible) {
     }
 }
 
+function focusAnswerInput() {
+    if (!useCustomNumpadOnly) {
+        answerInput.focus();
+    }
+}
+
 function startPractice() {
     currentPoints = 0;
     questionsAnswered = 0;
@@ -508,7 +521,7 @@ function startPractice() {
         generateQuestionPool();
     }
     
-    answerInput.focus();
+    focusAnswerInput();
     
     updateOkButtonState();
     startTimer();
@@ -611,7 +624,7 @@ function nextQuestion() {
         questionCounter.textContent = `Frage ${questionsAnswered + 1}`;
     }
     
-    answerInput.focus();
+    focusAnswerInput();
 }
 
 function endSession(aborted = false) {
@@ -678,7 +691,7 @@ numBtns.forEach(btn => {
             }
         }
         updateOkButtonState();
-        answerInput.focus();
+        focusAnswerInput();
     });
 });
 
