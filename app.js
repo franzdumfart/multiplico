@@ -54,10 +54,21 @@ const btnAboutClose = document.getElementById('btn-about-close');
 const headerUserInfo = document.getElementById('header-user-info');
 const totalPointsDisplay = document.getElementById('total-points-display');
 const totalPointsValue = document.getElementById('total-points-value');
+const userAvatarIcon = document.getElementById('user-avatar-icon');
+const userAvatarTitle = document.getElementById('user-avatar-title');
+const userAvatarProgress = document.getElementById('user-avatar-progress');
 const useCustomNumpadOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 let users = [];
 let currentUser = null;
+const avatarStages = [
+    { minPoints: 0, icon: '🥚', title: 'Starter' },
+    { minPoints: 250, icon: '🐣', title: 'Neuling' },
+    { minPoints: 1000, icon: '🦊', title: 'Schlaukopf' },
+    { minPoints: 3000, icon: '🐯', title: 'Profi' },
+    { minPoints: 6000, icon: '🦁', title: 'Champion' },
+    { minPoints: 10000, icon: '🐲', title: 'Legende' }
+];
 
 if (useCustomNumpadOnly) {
     answerInput.readOnly = true;
@@ -958,6 +969,7 @@ async function updateScoreBoard() {
     // Calculate and display total points
     const totalPoints = sessionScores.reduce((sum, s) => sum + (s.points || 0), 0);
     totalPointsValue.textContent = totalPoints.toLocaleString('de-DE');
+    updateUserAvatar(totalPoints);
 
     // Filter scores: only show top 5 for each mode
     const timedScores = sessionScores.filter(s => s.mode === 'timed')
@@ -1019,4 +1031,20 @@ async function updateScoreBoard() {
     if (topGlobalScores.length === 0) {
         scoreListGlobal.innerHTML = '<li class="score-empty">Noch keine globalen Ergebnisse. Wer wird der erste Champion? 🏆</li>';
     }
+}
+
+function updateUserAvatar(totalPoints) {
+    let stageIndex = 0;
+    for (let i = 0; i < avatarStages.length; i++) {
+        if (totalPoints >= avatarStages[i].minPoints) stageIndex = i;
+    }
+    const stage = avatarStages[stageIndex];
+    const nextStage = avatarStages[stageIndex + 1];
+    const level = stageIndex + 1;
+
+    userAvatarIcon.textContent = stage.icon;
+    userAvatarTitle.textContent = `Level ${level} · ${stage.title}`;
+    userAvatarProgress.textContent = nextStage
+        ? `${totalPoints.toLocaleString('de-DE')} / ${nextStage.minPoints.toLocaleString('de-DE')}`
+        : 'MAX';
 }

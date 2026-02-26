@@ -63,6 +63,34 @@ body {
     color: rgba(255, 255, 255, 0.85);
 }
 
+.user-avatar-box {
+    min-width: 90px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    text-align: center;
+}
+
+.user-avatar-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.user-avatar-title {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.user-avatar-progress {
+    margin-top: 2px;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .total-points-mini {
     text-align: right;
 }
