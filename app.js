@@ -986,7 +986,11 @@ async function updateScoreBoard() {
     topGlobalScores.forEach(s => {
         const li = document.createElement('li');
         li.className = 'score-item';
-        li.innerHTML = `<span><strong>${s.userName}</strong>: ${s.points} Pkt (${s.mode === 'timed' ? '5 Min' : '10 Frag'})</span>`;
+        let modeLabel = 'Endlos';
+        if (s.mode === 'timed') modeLabel = '5 Minuten';
+        if (s.mode === 'count') modeLabel = '10 Fragen';
+        if (s.mode === 'mistakes') modeLabel = 'Fehler üben';
+        li.innerHTML = `<span><strong>${s.userName}</strong>: ${s.points} Pkt (${modeLabel})</span>`;
         scoreListGlobal.appendChild(li);
     });
 
