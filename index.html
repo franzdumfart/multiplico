@@ -16,14 +16,12 @@
         
         <div id="header-user-info" class="header-user-info hidden">
             <div class="user-greeting">
-                <span id="display-user-name"></span>
+                <span id="display-user-name" class="name-click-target" tabindex="0" data-tooltip="Klicken, um den Namen zu ändern"></span>
                 <div class="user-actions">
-                    <button id="btn-open-avatar" class="btn-text-tiny">Avatar</button>
-                    <button id="btn-edit-user" class="btn-text-tiny">Name ändern</button>
-                    <button id="btn-switch-user" class="btn-text-tiny">Wechseln</button>
+                    <button id="btn-switch-user" class="btn-text-tiny">User wechseln</button>
                 </div>
             </div>
-            <div class="user-avatar-box">
+            <div class="user-avatar-box" data-tooltip="Avatar wählen">
                 <div id="user-avatar-icon" class="user-avatar-icon"></div>
                 <div id="user-avatar-title" class="user-avatar-title">Starter</div>
                 <div id="user-avatar-progress" class="user-avatar-progress">0 / 250</div>

@@ -5,8 +5,6 @@ const userListContainer = document.getElementById('user-list');
 const newUserInput = document.getElementById('new-user-name');
 const btnAddUser = document.getElementById('btn-add-user');
 const btnSwitchUser = document.getElementById('btn-switch-user');
-const btnEditUser = document.getElementById('btn-edit-user');
-const btnOpenAvatar = document.getElementById('btn-open-avatar');
 const displayUserName = document.getElementById('display-user-name');
 
 const seriesContainer = document.getElementById('series-selection');
@@ -63,6 +61,7 @@ const totalPointsValue = document.getElementById('total-points-value');
 const userAvatarIcon = document.getElementById('user-avatar-icon');
 const userAvatarTitle = document.getElementById('user-avatar-title');
 const userAvatarProgress = document.getElementById('user-avatar-progress');
+const userAvatarBox = document.querySelector('.user-avatar-box');
 const useCustomNumpadOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
 let users = [];
@@ -292,6 +291,7 @@ async function selectUser(userName) {
 
 async function loadUserData(userName) {
     displayUserName.textContent = `Hallo ${userName}! 👋`;
+    displayUserName.title = `Hallo ${userName}!`;
     
     // Namespaced data loading
     sessionScores = await storage.getItem(`multiplico_${userName}_scores`) || [];
@@ -333,13 +333,14 @@ btnSwitchUser.addEventListener('click', async () => {
     renderUserSelection();
 });
 
-btnEditUser.addEventListener('click', async () => {
+async function renameCurrentUser() {
+    if (!currentUser) return;
     const newName = prompt('Wie möchtest du heißen?', currentUser);
     if (newName && newName.trim() !== '' && newName !== currentUser) {
         const trimmedName = newName.trim();
         if (users.includes(trimmedName)) {
             alert('Dieser Name existiert bereits!');
-            return;
+            return false;
         }
 
         // Update users list
@@ -365,6 +366,19 @@ btnEditUser.addEventListener('click', async () => {
         currentUser = trimmedName;
         await storage.setItem('multiplico_current_user', trimmedName);
         await loadUserData(trimmedName);
+        return true;
+    }
+    return false;
+}
+
+displayUserName.addEventListener('click', () => {
+    renameCurrentUser();
+});
+
+displayUserName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        renameCurrentUser();
     }
 });
 
@@ -470,7 +484,7 @@ btnHistoryClose.addEventListener('click', () => {
     historyModal.classList.add('hidden');
 });
 
-btnOpenAvatar.addEventListener('click', () => {
+userAvatarBox.addEventListener('click', () => {
     const totalPoints = sessionScores.reduce((sum, s) => sum + (s.points || 0), 0);
     renderAvatarOptions(totalPoints);
     renderAvatarStagePreview();
