@@ -31,9 +31,8 @@ body {
 }
 
 .header-user-info {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 12px;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     background: linear-gradient(135deg, #1976d2, #42a5f5);
     padding: 14px 22px;
@@ -235,8 +234,9 @@ body {
     font-size: 0.75rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait) {
     .header-user-info {
+        display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 10px;
         padding: 12px 14px;
@@ -244,6 +244,12 @@ body {
 
     .user-greeting {
         grid-column: 1 / -1;
+    }
+
+    .user-avatar-box,
+    .total-points-mini {
+        grid-column: auto;
+        width: auto;
     }
 
     #display-user-name {
@@ -257,6 +263,14 @@ body {
     .user-avatar-box,
     .total-points-mini {
         min-width: 0;
+    }
+
+    .user-avatar-box {
+        justify-self: stretch;
+    }
+
+    .total-points-mini {
+        justify-self: stretch;
     }
 
     .total-points-mini {
