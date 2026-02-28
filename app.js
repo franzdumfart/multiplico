@@ -775,6 +775,12 @@ function updateScoreDisplay() {
     currentScoreDisplay.textContent = `Punkte: ${currentPoints}`;
 }
 
+function getPointsPerCorrectAnswer() {
+    const selectedCount = selectedSeries.length;
+    // Scale rewards by selected rows: 1 row => 1 point, ... 10 rows => 10 points.
+    return Math.max(1, Math.min(10, selectedCount));
+}
+
 numBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         const val = btn.dataset.val;
@@ -809,9 +815,10 @@ async function checkAnswer() {
     });
 
     if (isCorrect) {
-        currentPoints += 10;
+        const pointsForCorrect = getPointsPerCorrectAnswer();
+        currentPoints += pointsForCorrect;
         correctCount++;
-        showFeedback('Richtig! +10', 'correct');
+        showFeedback(`Richtig! +${pointsForCorrect}`, 'correct');
         
         await trackAttempt(currentQuestion.a, currentQuestion.b, true);
 
@@ -821,9 +828,10 @@ async function checkAnswer() {
         
         nextQuestion();
     } else {
-        currentPoints = Math.max(-500, currentPoints - 10);
+        const pointsForWrong = getPointsPerCorrectAnswer();
+        currentPoints = Math.max(-500, currentPoints - pointsForWrong);
         wrongCount++;
-        showFeedback(`Falsch! ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
+        showFeedback(`Falsch! -${pointsForWrong} · ${currentQuestion.a} × ${currentQuestion.b} = ${currentQuestion.answer}`, 'wrong');
         
         await trackAttempt(currentQuestion.a, currentQuestion.b, false);
 
