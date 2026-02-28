@@ -746,17 +746,17 @@ function endSession(aborted = false) {
             questions: sessionQuestions
         });
 
-        if (aborted) {
+        if (aborted && currentGameMode !== 'endless') {
             showSetup();
         } else {
-            showResults(currentPoints, questionsAnswered, timeStr);
+            showResults(currentPoints, questionsAnswered, correctCount, timeStr);
         }
     } else {
         showSetup();
     }
 }
 
-function showResults(points, count, time) {
+function showResults(points, count, correct, time) {
     let modeName = 'Endlos';
     if (currentGameMode === 'timed') modeName = '5 Minuten';
     if (currentGameMode === 'count') modeName = '10 Fragen';
@@ -764,6 +764,7 @@ function showResults(points, count, time) {
 
     let summary = `Du hast <strong>${points} Punkte</strong> erreicht!<br><br>`;
     summary += `Beantwortete Fragen: ${count}<br>`;
+    summary += `Richtige Antworten: ${correct}<br>`;
     summary += `Zeit: ${time}<br>`;
     summary += `Modus: ${modeName}`;
     
