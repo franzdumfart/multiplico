@@ -76,7 +76,7 @@ const avatarStages = [
     { minPoints: 10000, title: 'Legende' }
 ];
 const avatarProfiles = [
-    { id: 'lion', name: 'Loewe' },
+    { id: 'lion', name: 'Löwe' },
     { id: 'robot', name: 'Roboter' },
     { id: 'wizard', name: 'Magier' },
     { id: 'dragon', name: 'Drache' },
